@@ -1,0 +1,138 @@
+# ==========================================================================
+# OpsPilot — root .gitignore (monorepo: apps/web Next.js + apps/api FastAPI)
+# Rule of thumb: ignore anything generated, installed, secret, or machine-local.
+# ==========================================================================
+
+# ------------------------------------------------------------------ Secrets
+# NEVER commit real env files. Keep .env.example tracked as the template.
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+secrets/
+credentials.json
+gcp-key*.json
+service-account*.json
+
+# ------------------------------------------------------- Node / Next.js (web)
+node_modules/
+.pnp
+.pnp.*
+.next/
+out/
+build/
+dist/
+.turbo/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# Package-manager debris (keep your lockfile — see note at bottom)
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.yarn/cache/
+.yarn/unplugged/
+.yarn/install-state.gz
+
+# Test / coverage (JS)
+coverage/
+.nyc_output/
+*.lcov
+playwright-report/
+test-results/
+.vitest/
+
+# ------------------------------------------------------- Python / FastAPI (api)
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg
+*.egg-info/
+.eggs/
+.installed.cfg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+.pytype/
+.cache/
+.hypothesis/
+
+# Coverage (Python)
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+nosetests.xml
+
+# Packaging / build
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ------------------------------------------------------------------ Databases
+# Local sqlite/dev dumps — never commit data.
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+pgdata/
+
+# ------------------------------------------------------- AI / project-specific
+# Local model cache, generated embeddings, ingestion scratch, eval outputs.
+.langchain/
+.langgraph/
+*.faiss
+embeddings_cache/
+eval_runs/
+*.trace.json
+
+# --------------------------------------------------------------- OS / editors
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# JetBrains
+.idea/
+
+# VS Code — ignore local settings but keep shared recommendations
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+
+# ---------------------------------------------------------------------- Logs
+*.log
+logs/
+
+# ------------------------------------------------------------------- Misc
+*.bak
+*.tmp
+*.orig
+tmp/
+temp/
+
+# ==========================================================================
+# NOTE: keep lockfiles TRACKED — do NOT ignore them. Reproducible installs and
+# green CI depend on them:
+#   apps/web/package-lock.json   (npm ci in web-ci.yml)
+#   apps/api/uv.lock             (uv sync in api-ci.yml)
+# ==========================================================================
