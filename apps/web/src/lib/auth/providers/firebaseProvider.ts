@@ -25,7 +25,11 @@ export const firebaseProvider: AuthProvider = {
   refresh() {
     throw new Error(MSG);
   },
+  restoreSession() {
+    throw new Error(MSG);
+  },
   logout() {
     throw new Error(MSG);
   },
 };
+

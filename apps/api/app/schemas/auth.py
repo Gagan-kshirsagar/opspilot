@@ -29,7 +29,7 @@ class LoginRequest(BaseModel):
 class RefreshRequest(BaseModel):
     """POST /refresh body."""
 
-    refresh_token: str
+    refresh_token: str | None = None
 
 
 # ── Responses ─────────────────────────────────────────────

@@ -54,6 +54,7 @@ export function clearTokens(): void {
 export const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,
   timeout: 15_000,
 });
 
@@ -120,25 +121,21 @@ apiClient.interceptors.response.use(
     _isRefreshing = true;
 
     const refreshToken = getRefreshToken();
-    if (!refreshToken) {
-      _isRefreshing = false;
-      clearTokens();
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
-      }
-      return Promise.reject(error);
-    }
 
     try {
-      const { data } = await axios.post(`${BASE_URL}/api/v1/auth/refresh`, {
-        refresh_token: refreshToken,
-      });
+      const { data } = await axios.post(
+        `${BASE_URL}/api/v1/auth/refresh`,
+        refreshToken ? { refresh_token: refreshToken } : {},
+        { withCredentials: true },
+      );
 
       const newAccessToken = data.access_token as string;
-      const newRefreshToken = data.refresh_token as string;
+      const newRefreshToken = data.refresh_token as string | undefined;
 
       setAccessToken(newAccessToken);
-      setRefreshToken(newRefreshToken);
+      if (newRefreshToken) {
+        setRefreshToken(newRefreshToken);
+      }
       processQueue(null, newAccessToken);
 
       if (originalRequest.headers) {

@@ -40,6 +40,8 @@ export interface AuthProvider {
   register(email: string, password: string, name: string): Promise<AuthResponse>;
   loginAsGuest(): Promise<AuthResponse>;
   getCurrentUser(): Promise<AuthUser>;
-  refresh(refreshToken: string): Promise<TokenPair>;
+  refresh(refreshToken?: string): Promise<TokenPair>;
+  restoreSession(): Promise<AuthUser | null>;
   logout(): Promise<void>;
 }
+

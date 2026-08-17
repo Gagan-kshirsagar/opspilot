@@ -39,7 +39,10 @@ export function useThemeSync() {
     const stored = localStorage.getItem("opspilot_theme") as Theme | null;
     if (stored === "light" || stored === "dark") {
       setTheme(stored);
-    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    } else if (
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+    ) {
       setTheme("dark");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

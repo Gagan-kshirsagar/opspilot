@@ -1,13 +1,12 @@
-"""Auth router — thin endpoints that delegate to AuthService."""
-
 from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
+from app.core.config import get_settings
 from app.db.engine import get_session
 from app.models.user import User
 from app.schemas.auth import (
@@ -30,6 +29,30 @@ def _get_service() -> AuthService:
     return AuthService(get_auth_provider())
 
 
+def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
+    """Attach httpOnly refresh token cookie to the response."""
+    settings = get_settings()
+    max_age = settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400
+    response.set_cookie(
+        key=settings.REFRESH_COOKIE_NAME,
+        value=refresh_token,
+        max_age=max_age,
+        httponly=True,
+        samesite=settings.REFRESH_COOKIE_SAMESITE,
+        secure=settings.REFRESH_COOKIE_SECURE,
+        path="/",
+    )
+
+
+def _clear_refresh_cookie(response: Response) -> None:
+    """Remove httpOnly refresh token cookie from the client."""
+    settings = get_settings()
+    response.delete_cookie(
+        key=settings.REFRESH_COOKIE_NAME,
+        path="/",
+    )
+
+
 # ── POST /register ────────────────────────────────────────
 
 
@@ -41,11 +64,14 @@ def _get_service() -> AuthService:
 )
 async def register(
     body: RegisterRequest,
+    response: Response,
     session: Annotated[AsyncSession, Depends(get_session)],
     service: Annotated[AuthService, Depends(_get_service)],
 ) -> AuthResponse:
     """Register a new account with email + password."""
-    return await service.register(body.email, body.password, body.name, session)
+    result = await service.register(body.email, body.password, body.name, session)
+    _set_refresh_cookie(response, result.tokens.refresh_token)
+    return result
 
 
 # ── POST /login ───────────────────────────────────────────
@@ -58,11 +84,14 @@ async def register(
 )
 async def login(
     body: LoginRequest,
+    response: Response,
     session: Annotated[AsyncSession, Depends(get_session)],
     service: Annotated[AuthService, Depends(_get_service)],
 ) -> AuthResponse:
     """Authenticate with email + password."""
-    return await service.login(body.email, body.password, session)
+    result = await service.login(body.email, body.password, session)
+    _set_refresh_cookie(response, result.tokens.refresh_token)
+    return result
 
 
 # ── POST /guest ───────────────────────────────────────────
@@ -73,11 +102,14 @@ async def login(
     response_model=AuthResponse,
 )
 async def guest_login(
+    response: Response,
     session: Annotated[AsyncSession, Depends(get_session)],
     service: Annotated[AuthService, Depends(_get_service)],
 ) -> AuthResponse:
     """Create an ephemeral demo guest account."""
-    return await service.guest_login(session)
+    result = await service.guest_login(session)
+    _set_refresh_cookie(response, result.tokens.refresh_token)
+    return result
 
 
 # ── POST /refresh ─────────────────────────────────────────
@@ -89,11 +121,28 @@ async def guest_login(
     responses={401: {"model": ErrorResponse}},
 )
 async def refresh(
-    body: RefreshRequest,
+    request: Request,
+    response: Response,
     service: Annotated[AuthService, Depends(_get_service)],
+    body: RefreshRequest | None = None,
 ) -> TokenPair:
-    """Exchange a refresh token for a new token pair."""
-    return service.refresh(body.refresh_token)
+    """Exchange a refresh token (from body or cookie) for a new token pair."""
+    settings = get_settings()
+    token_str = (
+        body.refresh_token
+        if body and body.refresh_token
+        else request.cookies.get(settings.REFRESH_COOKIE_NAME)
+    )
+
+    if not token_str:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token required.",
+        )
+
+    new_tokens = service.refresh(token_str)
+    _set_refresh_cookie(response, new_tokens.refresh_token)
+    return new_tokens
 
 
 # ── GET /me ───────────────────────────────────────────────
@@ -118,6 +167,9 @@ async def me(
     "/logout",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def logout() -> Response:
-    """Logout — stateless: the client discards its tokens."""
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+async def logout(response: Response) -> Response:
+    """Logout — clears the refresh token cookie."""
+    _clear_refresh_cookie(response)
+    response.status_code = status.HTTP_204_NO_CONTENT
+    return response
+

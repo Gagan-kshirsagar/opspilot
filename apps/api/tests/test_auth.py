@@ -128,3 +128,34 @@ async def test_me_without_token(client: AsyncClient) -> None:
     """GET /me with no Authorization header returns 401."""
     resp = await client.get(_ME)
     assert resp.status_code == 401
+
+
+# ── 6. Refresh via httpOnly cookie + Logout clears cookie ─
+
+
+async def test_refresh_via_cookie_and_logout(
+    client: AsyncClient, registered_user: dict[str, object]
+) -> None:
+    """Verify cookies are set on login, /refresh works via cookie, and logout clears cookie."""
+    login_resp = await client.post(
+        _LOGIN,
+        json={"email": "alice@example.com", "password": "strongpass123"},
+    )
+    assert login_resp.status_code == 200
+    assert "opspilot_refresh_token" in login_resp.cookies
+
+    # POST /refresh with empty body should pick up the cookie from client session
+    refresh_resp = await client.post(_REFRESH)
+    assert refresh_resp.status_code == 200
+    new_tokens = refresh_resp.json()
+    assert "access_token" in new_tokens
+    assert "opspilot_refresh_token" in refresh_resp.cookies
+
+    # POST /logout should delete the cookie
+    logout_resp = await client.post("/api/v1/auth/logout")
+    assert logout_resp.status_code == 204
+    assert (
+        "opspilot_refresh_token" not in logout_resp.cookies
+        or logout_resp.cookies.get("opspilot_refresh_token") == ""
+    )
+

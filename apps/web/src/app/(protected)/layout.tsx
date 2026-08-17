@@ -12,7 +12,6 @@ import { LogOut, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMe, useLogout } from "@/lib/query/auth";
 import { useAuthStore } from "@/stores/authStore";
-import { getAccessToken } from "@/lib/api/client";
 import { GuestBadge } from "@/components/auth/guest-badge";
 import {
   ThemeToggle,
@@ -25,7 +24,7 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { status, user, setUser, setStatus, clear } = useAuthStore();
+  const { status, user, setUser, clear } = useAuthStore();
   const logoutMutation = useLogout();
 
   useThemeSync();
@@ -45,22 +44,15 @@ export default function ProtectedLayout({
     }
   }, [isError, clear]);
 
-  // Redirect when unauthenticated.
-  useEffect(() => {
-    // If no token at all, redirect immediately.
-    if (!getAccessToken() && status === "idle") {
-      setStatus("unauthenticated");
-    }
-  }, [status, setStatus]);
-
+  // Redirect only when confirmed unauthenticated.
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
     }
   }, [status, router]);
 
-  // Loading state.
-  if (isLoading || status === "idle" || status === "loading") {
+  // Loading state (waiting for bootstrap).
+  if (status === "loading" || (!user && status !== "unauthenticated")) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3 animate-fade-in">

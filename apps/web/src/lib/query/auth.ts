@@ -17,7 +17,7 @@ import { useAuthStore } from "@/stores/authStore";
 // ── useMe — fetch current user ──────────────────────────
 
 export function useMe() {
-  const { setUser, setStatus, clear } = useAuthStore();
+  const { setUser, clear } = useAuthStore();
 
   return useQuery<AuthUser>({
     queryKey: queryKeys.auth.me(),

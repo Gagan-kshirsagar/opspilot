@@ -11,7 +11,8 @@
  * - All semantic tokens, no raw colours.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,6 +21,7 @@ import { Loader2, AlertCircle, Zap } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useLogin, useRegister, useGuestLogin } from "@/lib/query/auth";
+import { useAuthStore } from "@/stores/authStore";
 import type { ErrorResponse } from "@/lib/auth/types";
 
 // ── Schemas ──────────────────────────────────────────────
@@ -45,8 +47,17 @@ type FormValues = {
 // ── Component ────────────────────────────────────────────
 
 export function LoginForm() {
+  const router = useRouter();
+  const { status } = useAuthStore();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (status === "authenticated" || status === "guest") {
+      router.push("/dashboard");
+    }
+  }, [status, router]);
+
 
   const isRegister = mode === "register";
   const schema = isRegister ? registerSchema : loginSchema;

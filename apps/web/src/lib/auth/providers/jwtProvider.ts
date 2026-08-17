@@ -1,10 +1,7 @@
-/**
- * JWT auth provider — calls FastAPI endpoints via the axios client.
- */
-
 import {
   apiClient,
   clearTokens,
+  getRefreshToken,
   setAccessToken,
   setRefreshToken,
 } from "@/lib/api/client";
@@ -52,13 +49,36 @@ export const jwtProvider: AuthProvider = {
     return data;
   },
 
-  async refresh(refreshToken: string): Promise<TokenPair> {
-    const { data } = await apiClient.post<TokenPair>("/api/v1/auth/refresh", {
-      refresh_token: refreshToken,
-    });
+  async refresh(refreshToken?: string): Promise<TokenPair> {
+    const token = refreshToken ?? getRefreshToken();
+    const { data } = await apiClient.post<TokenPair>(
+      "/api/v1/auth/refresh",
+      token ? { refresh_token: token } : {},
+    );
     setAccessToken(data.access_token);
-    setRefreshToken(data.refresh_token);
+    if (data.refresh_token) {
+      setRefreshToken(data.refresh_token);
+    }
     return data;
+  },
+
+  async restoreSession(): Promise<AuthUser | null> {
+    try {
+      const refreshToken = getRefreshToken();
+      const { data } = await apiClient.post<TokenPair>(
+        "/api/v1/auth/refresh",
+        refreshToken ? { refresh_token: refreshToken } : {},
+      );
+      setAccessToken(data.access_token);
+      if (data.refresh_token) {
+        setRefreshToken(data.refresh_token);
+      }
+      const user = await jwtProvider.getCurrentUser();
+      return user;
+    } catch {
+      clearTokens();
+      return null;
+    }
   },
 
   async logout(): Promise<void> {
@@ -69,3 +89,4 @@ export const jwtProvider: AuthProvider = {
     }
   },
 };
+

@@ -15,7 +15,14 @@ Format:
 
 ---
 
+## 2026-08-17 — Session persistence & auth bootstrap on reload
+
+**Decision:** Use an `httpOnly`, `SameSite=Lax` refresh cookie set by FastAPI on auth endpoints, backed by a provider-agnostic `restoreSession()` method and `<AuthBootstrap>` on startup, with status initialized to `'loading'`.
+**Why:** Persists credentials across page reloads securely without exposing long-lived tokens to JavaScript/XSS, while preventing premature route guard redirects or login page flashes during hydration.
+**Rejected:** Storing refresh tokens purely in memory (wiped on reload), storing purely in localStorage (exposed to XSS), or letting route guards inspect uninitialized in-memory state before rehydration finishes.
+
 ## 2026-08-16 — UI library: shadcn/ui only (no Material UI)
+
 
 **Decision:** Use shadcn/ui + Tailwind as the single UI system.
 **Why:** Code ownership, zero runtime styling cost, RSC-friendly, and it matches

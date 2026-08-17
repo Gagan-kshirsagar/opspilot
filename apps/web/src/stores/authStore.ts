@@ -9,7 +9,6 @@ import { create } from "zustand";
 import type { AuthUser } from "@/lib/auth/types";
 
 export type AuthStatus =
-  | "idle"
   | "loading"
   | "authenticated"
   | "guest"
@@ -25,7 +24,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  status: "idle",
+  status: "loading",
 
   setUser: (user) =>
     set({
