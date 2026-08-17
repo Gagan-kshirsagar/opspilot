@@ -13,7 +13,11 @@ Format:
 **Rejected:** <the alternative and why not>
 ```
 
----
+## 2026-08-17 — Services & Incidents domains with rank-based sorting
+
+**Decision:** Postgres-backed queryable `services` and `incidents` models with operational priority ranking (sev1 < sev2 < sev3, open < investigating < resolved) using SQL `CASE WHEN` expressions in SQLAlchemy 2.0 async, paired with a TanStack Table UI and RBAC-guarded resolve endpoint.
+**Why:** Maintains domain separation, provides high-performance server-side ranking for triage workflows, and structures data cleanly for future AI agent query toolkits.
+**Rejected:** Alphabetical column sorting for severity/status (semantically incorrect for triage), client-side post-sort (breaks pagination offsets), inline business logic in API routers.
 
 ## 2026-08-17 — Server-side users table with TanStack Table + shadcn
 

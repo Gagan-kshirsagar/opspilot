@@ -8,7 +8,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, LogOut, Shield, Users } from "lucide-react";
+import { AlertTriangle, LayoutDashboard, LogOut, Server, Shield, Users } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useMe, useLogout } from "@/lib/query/auth";
@@ -76,6 +76,18 @@ export default function ProtectedLayout({
       label: "Dashboard",
       icon: LayoutDashboard,
       active: pathname === "/dashboard",
+    },
+    {
+      href: "/services",
+      label: "Services",
+      icon: Server,
+      active: pathname.startsWith("/services"),
+    },
+    {
+      href: "/incidents",
+      label: "Incidents",
+      icon: AlertTriangle,
+      active: pathname.startsWith("/incidents"),
     },
     {
       href: "/users",
