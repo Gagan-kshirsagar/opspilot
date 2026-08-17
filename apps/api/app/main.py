@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.auth import router as auth_router
+from app.api.chat import router as chat_router
 from app.api.incidents import router as incidents_router
 from app.api.services import router as services_router
 from app.api.teams import router as teams_router
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
     app.include_router(teams_router)
     app.include_router(services_router)
     app.include_router(incidents_router)
+    app.include_router(chat_router)
 
     return app
 

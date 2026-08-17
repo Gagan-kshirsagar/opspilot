@@ -13,6 +13,12 @@ Format:
 **Rejected:** <the alternative and why not>
 ```
 
+## 2026-08-17 — RAG knowledge base foundation with pgvector & Gemini
+
+**Decision:** Postgres `pgvector` with HNSW cosine similarity index, chunking markdown ops docs, provider-agnostic `EmbeddingsProvider` & `LLMProvider` abstractions wrapping Gemini `text-embedding-004` and `gemini-1.5-flash`, with similarity threshold guardrail and citation tracking.
+**Why:** Single database engine for app data + embeddings (no external vector database needed), swappable LLM/embeddings clients for zero vendor lock-in, and strict similarity threshold guardrail to eliminate hallucination by declining out-of-KB queries without model invocation.
+**Rejected:** External vector databases like Pinecone/Weaviate (adds operational complexity and cost when Postgres/pgvector already exists), client-side RAG or ungrounded model queries (high hallucination risk).
+
 ## 2026-08-17 — Services & Incidents domains with rank-based sorting
 
 **Decision:** Postgres-backed queryable `services` and `incidents` models with operational priority ranking (sev1 < sev2 < sev3, open < investigating < resolved) using SQL `CASE WHEN` expressions in SQLAlchemy 2.0 async, paired with a TanStack Table UI and RBAC-guarded resolve endpoint.

@@ -42,4 +42,7 @@ export const queryKeys = {
     detail: (id: string) =>
       [...queryKeys.incidents.all, "detail", id] as const,
   },
+  chat: {
+    all: ["chat"] as const,
+  },
 } as const;

@@ -37,6 +37,14 @@ class Settings(BaseSettings):
     # ── CORS ──────────────────────────────────────────────
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
 
+    # ── RAG / Gemini ──────────────────────────────────────
+    GEMINI_API_KEY: str = ""
+    GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
+    GEMINI_CHAT_MODEL: str = "gemini-3.1-flash-lite"
+    RAG_TOP_K: int = 5
+    RAG_SIMILARITY_THRESHOLD: float = 0.55
+    RAG_TEMPERATURE: float = 0.2
+
 
 def get_settings() -> Settings:
     """Return the cached settings singleton."""

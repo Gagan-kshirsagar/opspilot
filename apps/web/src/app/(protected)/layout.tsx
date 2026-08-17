@@ -8,7 +8,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { AlertTriangle, LayoutDashboard, LogOut, Server, Shield, Users } from "lucide-react";
+import { AlertTriangle, Bot, LayoutDashboard, LogOut, Server, Shield, Users } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useMe, useLogout } from "@/lib/query/auth";
@@ -29,37 +29,45 @@ export default function ProtectedLayout({
   const { status, user, setUser, clear } = useAuthStore();
   const logoutMutation = useLogout();
 
+  // Keep theme in sync
   useThemeSync();
 
-  const { data, isError } = useMe();
+  // If we have a user in store, we consider it authenticated immediately.
+  // We still query useMe to validate/refresh in background.
+  const { data: meUser, isError, error } = useMe();
 
-  // Sync query data → Zustand.
   useEffect(() => {
-    if (data) {
-      setUser(data);
+    if (meUser) {
+      setUser(meUser);
     }
-  }, [data, setUser]);
+  }, [meUser, setUser]);
 
+  // Handle 401: clear and redirect
   useEffect(() => {
     if (isError) {
-      clear();
+      const is401 =
+        (error as { response?: { status?: number } })?.response?.status === 401;
+      if (is401 || !user) {
+        clear();
+        router.push("/login");
+      }
     }
-  }, [isError, clear]);
+  }, [isError, error, clear, router, user]);
 
-  // Redirect only when confirmed unauthenticated.
+  // Redirect when confirmed unauthenticated
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
     }
   }, [status, router]);
 
-  // Loading state (waiting for bootstrap).
-  if (status === "loading" || (!user && status !== "unauthenticated")) {
+  // Initial loading spinner only if we don't even have a user in Zustand store
+  if (status === "loading" && !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3 animate-fade-in">
-          <div className="size-8 animate-spin rounded-full border-2 border-subtle border-t-accent" />
-          <p className="text-sm text-muted">Loading…</p>
+        <div className="flex flex-col items-center gap-3">
+          <div className="size-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+          <p className="text-xs text-muted">Loading session…</p>
         </div>
       </div>
     );
@@ -88,6 +96,12 @@ export default function ProtectedLayout({
       label: "Incidents",
       icon: AlertTriangle,
       active: pathname.startsWith("/incidents"),
+    },
+    {
+      href: "/chat",
+      label: "Ask AI",
+      icon: Bot,
+      active: pathname.startsWith("/chat"),
     },
     {
       href: "/users",
