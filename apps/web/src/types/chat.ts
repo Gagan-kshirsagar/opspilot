@@ -24,6 +24,13 @@ export interface ChatResponse {
   used_context: boolean;
 }
 
+export interface AgentStep {
+  type: "tool_call" | "tool_result";
+  tool: string;
+  args?: Record<string, unknown>;
+  summary?: string;
+}
+
 export interface ChatMessage {
   id: string;
   session_id: string;
@@ -43,6 +50,13 @@ export interface ChatSession {
 
 export interface ChatSessionDetail extends ChatSession {
   messages: ChatMessage[];
+}
+
+export interface StreamStepPayload {
+  type: "tool_call" | "tool_result";
+  tool: string;
+  args?: Record<string, unknown>;
+  summary?: string;
 }
 
 export interface StreamTokenPayload {

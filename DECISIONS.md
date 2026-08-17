@@ -13,6 +13,12 @@ Format:
 **Rejected:** <the alternative and why not>
 ```
 
+## 2026-08-17 — ReAct agent with typed tool calling & reasoning stream
+
+**Decision:** Implemented a LangGraph ReAct-style agent graph with typed read-only tools (`retrieve_docs`, `query_services`, `query_incidents`, `query_users`, `get_service_detail`) calling existing repositories and retriever. Extended SSE streaming with `event: step` (`tool_call`, `tool_result`) and built a collapsible thought trail UI.
+**Why:** Unifies static knowledge base runbooks with live operational database queries without creating duplicate query paths or raw SQL in tools. Loop guardrail (`AGENT_MAX_ITERS=5`) prevents runaway loops and forces grounded synthesis.
+**Rejected:** Standalone single-turn RAG (cannot answer queries requiring live service/incident counts combined with runbooks), unconstrained autonomous agents with write permissions (high risk in ops environments; mutations belong in controlled review workflows).
+
 ## 2026-08-17 — SSE streaming chat & persistent multi-turn conversational memory
 
 **Decision:** Server-Sent Events (`text/event-stream` via FastAPI `StreamingResponse`) with typed events (`token`, `citations`, `done`, `error`), backed by `chat_sessions` and `chat_messages` tables in Postgres. Prompt memory dynamically caps the last 6 messages (3 conversation turns) for multi-turn dialogue context.

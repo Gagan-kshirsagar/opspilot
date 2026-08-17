@@ -128,100 +128,53 @@ class ChatService:
         )
         await session.commit()
 
-        # 4. Retrieve knowledge base chunks
-        chunks = await self.retriever.retrieve(question, session)
-        threshold = self.settings.RAG_SIMILARITY_THRESHOLD
-        relevant_chunks = [c for c in chunks if c.score >= threshold]
+        # 4. Execute LangGraph ReAct Agent Runner
+        from app.agent.graph import AgentRunner
 
-        # 5. Out-of-KB guardrail check
-        if not relevant_chunks:
-            # Send empty citations with used_context=False
-            citations_data = json.dumps({"citations": [], "used_context": False})
-            yield f"event: citations\ndata: {citations_data}\n\n"
+        agent_runner = AgentRunner(session=session, retriever=self.retriever)
 
-            # Stream decline tokens
-            token_data = json.dumps({"text": DECLINE_MESSAGE})
-            yield f"event: token\ndata: {token_data}\n\n"
+        final_answer_accum: str = ""
+        final_citations: list[dict[str, Any]] | None = None
 
-            # Persist assistant decline message
-            assistant_msg = await repo.add_message(
-                session_id=chat_session.id,
-                role=MessageRole.ASSISTANT,
-                content=DECLINE_MESSAGE,
-                citations=None,
-            )
-            await session.commit()
-
-            done_data = json.dumps(
-                {
-                    "session_id": str(chat_session.id),
-                    "message_id": str(assistant_msg.id),
-                    "title": chat_session.title,
-                }
-            )
-            yield f"event: done\ndata: {done_data}\n\n"
-            return
-
-        # 6. Prepare citations and emit citations event
-        citations = [
-            Citation(
-                document_title=chunk.document_title,
-                ordinal=chunk.ordinal,
-                snippet=(
-                    chunk.content[:200] + "..."
-                    if len(chunk.content) > 200
-                    else chunk.content
-                ),
-                score=round(chunk.score, 4),
-            )
-            for chunk in relevant_chunks
-        ]
-        citations_data = json.dumps(
-            {
-                "citations": [c.model_dump() for c in citations],
-                "used_context": True,
-            }
-        )
-        yield f"event: citations\ndata: {citations_data}\n\n"
-
-        # 7. Build grounded prompt and stream LLM tokens
-        prompt = format_rag_prompt(
-            question=question,
-            chunks=relevant_chunks,
-            conversation_history=conversation_history,
-        )
-        llm = get_llm_provider()
-
-        accumulated_tokens: list[str] = []
         try:
-            async for token in llm.generate_stream(prompt):
-                if token:
-                    accumulated_tokens.append(token)
-                    token_data = json.dumps({"text": token})
-                    yield f"event: token\ndata: {token_data}\n\n"
+            async for evt in agent_runner.run_stream(
+                question=question,
+                conversation_history=conversation_history,
+            ):
+                evt_name = evt.get("event")
+                evt_data = evt.get("data", {})
+
+                if evt_name == "step":
+                    yield f"event: step\ndata: {json.dumps(evt_data)}\n\n"
+                elif evt_name == "citations":
+                    yield f"event: citations\ndata: {json.dumps(evt_data)}\n\n"
+                elif evt_name == "token":
+                    yield f"event: token\ndata: {json.dumps(evt_data)}\n\n"
+                elif evt_name == "agent_done":
+                    final_answer_accum = evt_data.get("final_answer", "")
+                    raw_cites = evt_data.get("citations", [])
+                    if raw_cites:
+                        final_citations = raw_cites
+
         except Exception as e:
-            logger.exception("Error during LLM streaming: %s", e)
-            err_data = json.dumps({"message": "Error streaming response from AI"})
+            logger.exception("Error during ReAct agent execution: %s", e)
+            err_data = json.dumps({"message": "Error streaming agent response"})
             yield f"event: error\ndata: {err_data}\n\n"
             return
 
-        full_answer = "".join(accumulated_tokens).strip()
-        if not full_answer:
-            full_answer = DECLINE_MESSAGE
+        if not final_answer_accum:
+            final_answer_accum = DECLINE_MESSAGE
 
-        is_declined = DECLINE_MESSAGE.lower() in full_answer.lower()
-        saved_citations = None if is_declined else [c.model_dump() for c in citations]
-
-        # 8. Persist completed assistant message
+        # 5. Persist assistant message
         assistant_msg = await repo.add_message(
             session_id=chat_session.id,
             role=MessageRole.ASSISTANT,
-            content=full_answer,
-            citations=saved_citations,
+            content=final_answer_accum,
+            citations=final_citations,
         )
         await session.commit()
 
-        # 9. Emit done event
+        # 6. Emit done event
         done_data = json.dumps(
             {
                 "session_id": str(chat_session.id),

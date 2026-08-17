@@ -18,6 +18,7 @@ export function AskPanel() {
   const {
     isStreaming,
     streamingUserMessage,
+    streamingSteps,
     streamingContent,
     streamingCitations,
     streamingUsedContext,
@@ -87,7 +88,7 @@ export function AskPanel() {
               </h2>
               <span className="text-[10px] text-faint flex items-center gap-1">
                 <span className="size-1.5 rounded-full bg-emerald-400" />
-                Grounded pgvector RAG (14 docs)
+                LangGraph ReAct Agent (Live DB + KB)
               </span>
             </div>
           </div>
@@ -108,6 +109,7 @@ export function AskPanel() {
         <ChatMessageList
           messages={sessionDetail?.messages || []}
           streamingUserMessage={streamingUserMessage}
+          streamingSteps={streamingSteps}
           streamingContent={streamingContent}
           streamingCitations={streamingCitations}
           streamingUsedContext={streamingUsedContext}

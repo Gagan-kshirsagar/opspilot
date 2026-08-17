@@ -13,11 +13,13 @@ import {
 } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import type { ChatMessage, Citation } from "@/types/chat";
+import { AgentThoughtTrail } from "@/components/chat/agent-thought-trail";
+import type { AgentStep, ChatMessage, Citation } from "@/types/chat";
 
 interface ChatMessageListProps {
   messages: ChatMessage[];
   streamingUserMessage: string | null;
+  streamingSteps?: AgentStep[];
   streamingContent: string;
   streamingCitations: Citation[] | null;
   streamingUsedContext: boolean | null;
@@ -37,6 +39,7 @@ const SUGGESTED_PROMPTS = [
 export function ChatMessageList({
   messages,
   streamingUserMessage,
+  streamingSteps = [],
   streamingContent,
   streamingCitations,
   streamingUsedContext,
@@ -225,6 +228,11 @@ export function ChatMessageList({
               className="max-w-[85%] sm:max-w-[80%] rounded-2xl rounded-bl-none bg-surface-2/60 border border-subtle p-4 text-xs sm:text-sm text-foreground leading-relaxed shadow-sm space-y-3"
               aria-live="polite"
             >
+              {/* Agent Thought / Tool Steps Trail */}
+              {streamingSteps.length > 0 && (
+                <AgentThoughtTrail steps={streamingSteps} isStreaming={isStreaming} />
+              )}
+
               {streamingUsedContext === false && (
                 <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 text-xs text-amber-300">
                   <Info className="size-4 shrink-0 mt-0.5" />

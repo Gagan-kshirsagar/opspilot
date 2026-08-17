@@ -17,6 +17,9 @@ from app.repositories.chat_repo import ChatRepository
 from tests.conftest import _session_factory
 
 
+from app.agent.graph import set_agent_llm_handler
+
+
 class MockStreamEmbeddings(EmbeddingsProvider):
     """Deterministic mock embeddings for streaming tests."""
 
@@ -35,30 +38,73 @@ class MockStreamEmbeddings(EmbeddingsProvider):
         return [0.0] * 10 + [1.0] + [0.0] * 757
 
 
-class MockStreamLLM(LLMProvider):
-    """Mock LLM that captures prompts and yields known token streams."""
+last_agent_prompt: str = ""
 
-    last_prompt: str = ""
 
-    async def generate_response(self, prompt: str, system_prompt: str = "") -> str:
-        self.last_prompt = prompt
-        return "The API Gateway SLA is 99.98%."
+async def mock_agent_stream_handler(
+    question: str,
+    conversation_history: list[tuple[str, str]] | None = None,
+    session: AsyncSession | None = None,
+    retriever: Any = None,
+) -> AsyncGenerator[dict[str, Any], None]:
+    global last_agent_prompt
+    history_lines = []
+    if conversation_history:
+        for r, c in conversation_history:
+            history_lines.append(f"{r}: {c}")
+    last_agent_prompt = "Prior History: " + "\n".join(history_lines) + f" | Question: {question}"
 
-    async def generate_stream(
-        self,
-        prompt: str,
-        system_prompt: str = "",
-    ) -> AsyncGenerator[str, None]:
-        MockStreamLLM.last_prompt = prompt
-        tokens = ["The ", "API ", "Gateway ", "SLA ", "is ", "99.98% ", "[Service Level Agreements, Section 0]."]
-        for tok in tokens:
-            yield tok
+    if "tokyo" in question.lower():
+        # Decline out of KB
+        yield {"event": "citations", "data": {"citations": [], "used_context": False}}
+        yield {"event": "token", "data": {"text": "I don't have that in the knowledge base."}}
+        yield {
+            "event": "agent_done",
+            "data": {
+                "final_answer": "I don't have that in the knowledge base.",
+                "citations": [],
+                "steps": [],
+            },
+        }
+    else:
+        yield {
+            "event": "citations",
+            "data": {
+                "citations": [
+                    {
+                        "document_title": "Service Level Agreements",
+                        "ordinal": 0,
+                        "snippet": "API Gateway availability SLA is 99.98%.",
+                        "score": 0.95,
+                    }
+                ],
+                "used_context": True,
+            },
+        }
+        tokens = ["The ", "API ", "Gateway ", "SLA ", "is ", "99.98%."]
+        for t in tokens:
+            yield {"event": "token", "data": {"text": t}}
+        yield {
+            "event": "agent_done",
+            "data": {
+                "final_answer": "The API Gateway SLA is 99.98%.",
+                "citations": [
+                    {
+                        "document_title": "Service Level Agreements",
+                        "ordinal": 0,
+                        "snippet": "API Gateway availability SLA is 99.98%.",
+                        "score": 0.95,
+                    }
+                ],
+                "steps": [],
+            },
+        }
 
 
 @pytest.fixture(autouse=True)
 def _setup_stream_providers() -> None:
     set_embeddings_provider(MockStreamEmbeddings())
-    set_llm_provider(MockStreamLLM())
+    set_agent_llm_handler(mock_agent_stream_handler)
 
 
 @pytest.fixture
@@ -208,11 +254,11 @@ async def test_stream_chat_multi_turn_memory(
     )
     assert resp2.status_code == 200
 
-    # Verify MockStreamLLM received the prior conversation in prompt
-    assert "Prior Conversation History:" in MockStreamLLM.last_prompt
-    assert "What is the availability SLA for API gateway?" in MockStreamLLM.last_prompt
-    assert "User Question:" in MockStreamLLM.last_prompt
-    assert "What about the Auth Service availability?" in MockStreamLLM.last_prompt
+    # Verify agent received the prior conversation in history
+    assert "Prior History:" in last_agent_prompt
+    assert "What is the availability SLA for API gateway?" in last_agent_prompt
+    assert "Question:" in last_agent_prompt
+    assert "What about the Auth Service availability?" in last_agent_prompt
 
 
 @pytest.mark.asyncio

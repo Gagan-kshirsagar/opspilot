@@ -6,10 +6,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getAccessToken } from "@/lib/api/client";
 import { queryKeys } from "@/lib/query/keys";
 import type {
+  AgentStep,
   Citation,
   StreamCitationsPayload,
   StreamDonePayload,
   StreamErrorPayload,
+  StreamStepPayload,
   StreamTokenPayload,
 } from "@/types/chat";
 
@@ -21,6 +23,7 @@ interface UseChatStreamOptions {
 export function useChatStream(options?: UseChatStreamOptions) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingUserMessage, setStreamingUserMessage] = useState<string | null>(null);
+  const [streamingSteps, setStreamingSteps] = useState<AgentStep[]>([]);
   const [streamingContent, setStreamingContent] = useState("");
   const [streamingCitations, setStreamingCitations] = useState<Citation[] | null>(null);
   const [streamingUsedContext, setStreamingUsedContext] = useState<boolean | null>(null);
@@ -49,6 +52,7 @@ export function useChatStream(options?: UseChatStreamOptions) {
   const reset = useCallback(() => {
     stop();
     setStreamingUserMessage(null);
+    setStreamingSteps([]);
     setStreamingContent("");
     setStreamingCitations(null);
     setStreamingUsedContext(null);
@@ -71,6 +75,7 @@ export function useChatStream(options?: UseChatStreamOptions) {
       setIsStreaming(true);
       setError(null);
       setStreamingUserMessage(trimmed);
+      setStreamingSteps([]);
       setStreamingContent("");
       setStreamingCitations(null);
       setStreamingUsedContext(null);
@@ -147,7 +152,10 @@ export function useChatStream(options?: UseChatStreamOptions) {
             try {
               const parsed = JSON.parse(dataStr);
 
-              if (eventType === "token") {
+              if (eventType === "step") {
+                const stepData = parsed as StreamStepPayload;
+                setStreamingSteps((prev) => [...prev, stepData]);
+              } else if (eventType === "token") {
                 const tokenData = parsed as StreamTokenPayload;
                 if (tokenData.text) {
                   setStreamingContent((prev) => prev + tokenData.text);
@@ -169,6 +177,7 @@ export function useChatStream(options?: UseChatStreamOptions) {
 
                 // Clear live ephemeral stream buffer
                 setStreamingUserMessage(null);
+                setStreamingSteps([]);
                 setStreamingContent("");
                 setStreamingCitations(null);
                 setStreamingUsedContext(null);
@@ -190,7 +199,6 @@ export function useChatStream(options?: UseChatStreamOptions) {
         }
       } catch (err: unknown) {
         if ((err as Error)?.name === "AbortError") {
-          // Stream cancelled by user
           setIsStreaming(false);
           return;
         }
@@ -211,6 +219,7 @@ export function useChatStream(options?: UseChatStreamOptions) {
   return {
     isStreaming,
     streamingUserMessage,
+    streamingSteps,
     streamingContent,
     streamingCitations,
     streamingUsedContext,
