@@ -2,12 +2,13 @@
 
 /**
  * Protected layout — redirects to /login when unauthenticated.
- * Shows a top bar with user info, guest badge, and theme toggle.
+ * Shows a top bar with navigation links, user info, guest badge, and theme toggle.
  */
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { LogOut, Shield } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { LayoutDashboard, LogOut, Shield, Users } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useMe, useLogout } from "@/lib/query/auth";
@@ -24,12 +25,13 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { status, user, setUser, clear } = useAuthStore();
   const logoutMutation = useLogout();
 
   useThemeSync();
 
-  const { data, isLoading, isError } = useMe();
+  const { data, isError } = useMe();
 
   // Sync query data → Zustand.
   useEffect(() => {
@@ -68,18 +70,58 @@ export default function ProtectedLayout({
     return null;
   }
 
+  const navItems = [
+    {
+      href: "/dashboard",
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      active: pathname === "/dashboard",
+    },
+    {
+      href: "/users",
+      label: "Users",
+      icon: Users,
+      active: pathname.startsWith("/users"),
+    },
+  ];
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* ── Top bar ──────────────────────────────────── */}
       <header className="sticky top-0 z-30 border-b border-subtle bg-surface/80 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-6">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 transition-opacity hover:opacity-80"
+            >
               <Shield className="size-5 text-accent" />
               <span className="text-sm font-semibold tracking-tight text-foreground">
                 OpsPilot
               </span>
-            </div>
+            </Link>
+
+            {/* Navigation links */}
+            <nav className="flex items-center gap-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors",
+                      item.active
+                        ? "bg-surface-2 text-foreground font-semibold"
+                        : "text-muted hover:bg-surface-2/60 hover:text-foreground"
+                    )}
+                  >
+                    <Icon className="size-3.5" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
 
           <div className="flex items-center gap-3">

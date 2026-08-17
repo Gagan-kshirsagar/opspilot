@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import enum
+import uuid
+from datetime import datetime
 
-from sqlalchemy import Boolean, Enum, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
@@ -23,6 +25,7 @@ class UserStatus(str, enum.Enum):
     """Account status."""
 
     ACTIVE = "active"
+    PENDING = "pending"
     INACTIVE = "inactive"
 
 
@@ -51,3 +54,14 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     is_guest: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
     )
+    team_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("teams.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    last_active: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    # Relationships
+    team = relationship("Team", lazy="selectin")

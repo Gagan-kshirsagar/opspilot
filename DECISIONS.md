@@ -15,6 +15,12 @@ Format:
 
 ---
 
+## 2026-08-17 — Server-side users table with TanStack Table + shadcn
+
+**Decision:** Server-side pagination, sorting, and multi-field filtering backed by SQLAlchemy 2.0 async queries, surfaced via headless TanStack Table + shadcn table primitives.
+**Why:** Scales to thousands of users without memory or network bottlenecks, keeps query parameters URL/state synchronised, and provides a fully accessible data table with custom token styling.
+**Rejected:** Client-side sorting/filtering (unscalable for large databases, transmits entire table over network), pre-packaged heavy grid libraries like AG-Grid or MUI X-Data-Grid (breaks single UI system rule and adds bloated bundle size).
+
 ## 2026-08-17 — Session persistence & auth bootstrap on reload
 
 **Decision:** Use an `httpOnly`, `SameSite=Lax` refresh cookie set by FastAPI on auth endpoints, backed by a provider-agnostic `restoreSession()` method and `<AuthBootstrap>` on startup, with status initialized to `'loading'`.

@@ -79,6 +79,8 @@
   --color-surface: hsl(var(--surface));
   --color-surface-2: hsl(var(--surface-2));
   --color-overlay: hsl(var(--overlay));
+  --color-popover: hsl(var(--surface));
+  --color-popover-foreground: hsl(var(--foreground));
   --color-foreground: hsl(var(--foreground));
   --color-muted: hsl(var(--muted));
   --color-faint: hsl(var(--faint));
