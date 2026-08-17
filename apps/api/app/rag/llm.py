@@ -14,6 +14,9 @@ from app.rag.prompt import DECLINE_MESSAGE, SYSTEM_PROMPT
 logger = logging.getLogger(__name__)
 
 
+from collections.abc import AsyncGenerator
+
+
 class LLMProvider(Protocol):
     """Protocol for pluggable LLM chat completion providers."""
 
@@ -23,6 +26,14 @@ class LLMProvider(Protocol):
         system_prompt: str = SYSTEM_PROMPT,
     ) -> str:
         """Generate text completion from prompt and system instructions."""
+        ...
+
+    def generate_stream(
+        self,
+        prompt: str,
+        system_prompt: str = SYSTEM_PROMPT,
+    ) -> AsyncGenerator[str, None]:
+        """Stream token chunks from prompt and system instructions."""
         ...
 
 
@@ -110,6 +121,77 @@ class GeminiLLMProvider:
             if last_err:
                 logger.error("LLM generateContent failed after retries: %s", last_err)
             return DECLINE_MESSAGE
+
+    async def generate_stream(
+        self,
+        prompt: str,
+        system_prompt: str = SYSTEM_PROMPT,
+    ) -> AsyncGenerator[str, None]:
+        """Stream token chunks from Gemini SSE stream."""
+        if not self.api_key:
+            logger.warning("No GEMINI_API_KEY configured; yielding decline message.")
+            yield DECLINE_MESSAGE
+            return
+
+        headers = {"x-goog-api-key": self.api_key, "Content-Type": "application/json"}
+        payload = {
+            "system_instruction": {
+                "parts": [{"text": system_prompt}],
+            },
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [{"text": prompt}],
+                }
+            ],
+            "generationConfig": {
+                "temperature": self.temperature,
+                "maxOutputTokens": 2048,
+                "thinkingConfig": {"thinkingBudget": 0},
+            },
+        }
+
+        fallback_models = [self.model_name, "gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3.6-flash"]
+        candidate_models = list(dict.fromkeys(fallback_models))
+
+        stream_started = False
+        import json
+
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            for model in candidate_models:
+                url = f"{self.base_url}/models/{model}:streamGenerateContent?alt=sse"
+                try:
+                    async with client.stream("POST", url, headers=headers, json=payload) as resp:
+                        if resp.status_code != 200:
+                            continue
+
+                        async for line in resp.aiter_lines():
+                            if line.startswith("data: "):
+                                data_str = line[6:].strip()
+                                if not data_str:
+                                    continue
+                                try:
+                                    chunk = json.loads(data_str)
+                                    candidates = chunk.get("candidates", [])
+                                    if candidates:
+                                        parts = candidates[0].get("content", {}).get("parts", [])
+                                        for p in parts:
+                                            if "text" in p and not p.get("thought"):
+                                                text = p["text"]
+                                                if text:
+                                                    stream_started = True
+                                                    yield text
+                                except json.JSONDecodeError:
+                                    continue
+
+                    if stream_started:
+                        return
+                except Exception as e:
+                    logger.warning("Streaming with model %s failed: %s", model, e)
+                    continue
+
+        if not stream_started:
+            yield DECLINE_MESSAGE
 
 
 _singleton_llm_provider: LLMProvider | None = None

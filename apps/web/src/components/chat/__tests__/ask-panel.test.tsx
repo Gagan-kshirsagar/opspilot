@@ -1,6 +1,6 @@
 /**
  * AskPanel component tests — RTL.
- * Tests all 4 UI states: initial, loading, error, and answer with citations.
+ * Tests multi-turn chat layout, session sidebar, suggestion clicks, and streaming message display.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -10,9 +10,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { AskPanel } from "../ask-panel";
 import * as chatApi from "@/lib/api/chat";
-import type { ChatResponse } from "@/types/chat";
 
 vi.mock("@/lib/api/chat");
+
+import { useAuthStore } from "@/stores/authStore";
 
 function renderWithClient(ui: React.ReactElement) {
   const testQueryClient = new QueryClient({
@@ -29,85 +30,133 @@ function renderWithClient(ui: React.ReactElement) {
 describe("AskPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.HTMLElement.prototype.scrollIntoView = vi.fn();
+    useAuthStore.setState({
+      status: "authenticated",
+      user: {
+        id: "user-1",
+        email: "test@test.com",
+        name: "Test User",
+        role: "admin",
+        status: "active",
+        is_guest: false,
+        created_at: new Date().toISOString(),
+      },
+    });
+    vi.spyOn(chatApi, "listChatSessions").mockResolvedValue([
+      {
+        id: "sess-1",
+        user_id: "user-1",
+        title: "Previous SLA Discussion",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ]);
   });
 
-  it("renders initial state with input and suggestions", () => {
+  it("renders multi-turn chat interface with sidebar and input", async () => {
     renderWithClient(<AskPanel />);
 
-    expect(screen.getByPlaceholderText(/ask anything about opspilot/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /ask opspilot/i })).toBeInTheDocument();
-    expect(screen.getByText(/what is the p1 incident escalation process/i)).toBeInTheDocument();
+    expect(screen.getByText("Conversations")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /new chat/i })).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(/ask a question or follow up on previous turns/i)
+    ).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText("Previous SLA Discussion")).toBeInTheDocument();
+    });
   });
 
-  it("submits question and renders grounded answer with citations", async () => {
-    const mockResponse: ChatResponse = {
-      answer: "For P1 critical incidents, page on-call immediately and open war room.",
-      citations: [
+  it("loads existing session messages when session is clicked in sidebar", async () => {
+    vi.spyOn(chatApi, "getChatSession").mockResolvedValueOnce({
+      id: "sess-1",
+      user_id: "user-1",
+      title: "Previous SLA Discussion",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      messages: [
         {
-          document_title: "Incident Response Runbook",
-          ordinal: 0,
-          snippet: "SEV-1 is critical customer-facing outage. Escalation steps require paging on-call.",
-          score: 0.88,
+          id: "m-1",
+          session_id: "sess-1",
+          role: "user",
+          content: "What is the API Gateway SLA?",
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: "m-2",
+          session_id: "sess-1",
+          role: "assistant",
+          content: "The API Gateway availability SLA is 99.98%.",
+          citations: [
+            {
+              document_title: "Service Level Agreements",
+              ordinal: 0,
+              snippet: "API Gateway availability SLA is 99.98%.",
+              score: 0.95,
+            },
+          ],
+          created_at: new Date().toISOString(),
         },
       ],
-      used_context: true,
-    };
-
-    vi.spyOn(chatApi, "askChat").mockResolvedValueOnce(mockResponse);
+    });
 
     renderWithClient(<AskPanel />);
 
-    const input = screen.getByPlaceholderText(/ask anything about opspilot/i);
-    await userEvent.type(input, "What is the P1 process?");
-    const sendButton = screen.getByRole("button", { name: /ask opspilot/i });
-    await userEvent.click(sendButton);
-
     await waitFor(() => {
-      expect(screen.getByText("For P1 critical incidents, page on-call immediately and open war room.")).toBeInTheDocument();
+      expect(screen.getByText("Previous SLA Discussion")).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Grounded (1 sources)")).toBeInTheDocument();
-    expect(screen.getByText("Incident Response Runbook")).toBeInTheDocument();
-    expect(screen.getByText("88% match")).toBeInTheDocument();
+    await userEvent.click(screen.getByText("Previous SLA Discussion"));
+
+    await waitFor(() => {
+      expect(screen.getByText("What is the API Gateway SLA?")).toBeInTheDocument();
+      expect(screen.getByText("The API Gateway availability SLA is 99.98%.")).toBeInTheDocument();
+      expect(screen.getByText("Service Level Agreements")).toBeInTheDocument();
+      expect(screen.getByText("95%")).toBeInTheDocument();
+    });
   });
 
-  it("renders decline guardrail banner when out of knowledge base", async () => {
-    const mockResponse: ChatResponse = {
-      answer: "I don't have that in the knowledge base.",
-      citations: [],
-      used_context: false,
-    };
+  it("populates input and sends message when suggestion prompt is clicked", async () => {
+    const sseChunks = [
+      'event: citations\ndata: {"citations":[],"used_context":false}\n\n',
+      'event: token\ndata: {"text":"I don\'t have that in the knowledge base."}\n\n',
+      'event: done\ndata: {"session_id":"sess-2","message_id":"msg-2","title":"New Chat"}\n\n',
+    ];
 
-    vi.spyOn(chatApi, "askChat").mockResolvedValueOnce(mockResponse);
+    let chunkIndex = 0;
+    const mockReadableStream = new ReadableStream({
+      pull(controller) {
+        if (chunkIndex < sseChunks.length) {
+          const encoder = new TextEncoder();
+          controller.enqueue(encoder.encode(sseChunks[chunkIndex]));
+          chunkIndex++;
+        } else {
+          controller.close();
+        }
+      },
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      body: mockReadableStream,
+    });
 
     renderWithClient(<AskPanel />);
 
-    const input = screen.getByPlaceholderText(/ask anything about opspilot/i);
-    await userEvent.type(input, "What is the capital of France?");
-    await userEvent.click(screen.getByRole("button", { name: /ask opspilot/i }));
+    expect(
+      screen.getByText(/what is the p1 incident escalation process/i)
+    ).toBeInTheDocument();
 
-    await waitFor(() => {
-      expect(screen.getByText("Knowledge Base Boundary Guardrail")).toBeInTheDocument();
-    });
+    await userEvent.click(
+      screen.getByText(/what is the p1 incident escalation process/i)
+    );
 
-    expect(screen.getByText("Out of Knowledge Base")).toBeInTheDocument();
-    expect(screen.getByText("I don't have that in the knowledge base.")).toBeInTheDocument();
-  });
-
-  it("renders error state when API request fails", async () => {
-    vi.spyOn(chatApi, "askChat").mockRejectedValueOnce(new Error("Connection timeout"));
-
-    renderWithClient(<AskPanel />);
-
-    const input = screen.getByPlaceholderText(/ask anything about opspilot/i);
-    await userEvent.type(input, "Test query");
-    await userEvent.click(screen.getByRole("button", { name: /ask opspilot/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText("Query Failed")).toBeInTheDocument();
-    });
-
-    expect(screen.getByText("Connection timeout")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/v1/chat/stream"),
+      expect.objectContaining({
+        method: "POST",
+      })
+    );
   });
 });

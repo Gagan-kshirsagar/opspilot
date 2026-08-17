@@ -19,8 +19,12 @@ YOUR RULES:
 DECLINE_MESSAGE = "I don't have that in the knowledge base."
 
 
-def format_rag_prompt(question: str, chunks: list[RetrievedChunk]) -> str:
-    """Format user question and retrieved chunks into the prompt context."""
+def format_rag_prompt(
+    question: str,
+    chunks: list[RetrievedChunk],
+    conversation_history: list[tuple[str, str]] | None = None,
+) -> str:
+    """Format user question, memory history, and retrieved chunks into the prompt context."""
     if not chunks:
         context_str = "No relevant context found."
     else:
@@ -33,7 +37,15 @@ def format_rag_prompt(question: str, chunks: list[RetrievedChunk]) -> str:
             )
         context_str = "\n".join(formatted_chunks)
 
-    return f"""Knowledge Base Context:
+    history_str = ""
+    if conversation_history:
+        history_lines = []
+        for role, text in conversation_history:
+            prefix = "User:" if role == "user" else "Assistant:"
+            history_lines.append(f"{prefix} {text.strip()}")
+        history_str = "Prior Conversation History:\n" + "\n".join(history_lines) + "\n\n"
+
+    return f"""{history_str}Knowledge Base Context:
 {context_str}
 
 User Question:

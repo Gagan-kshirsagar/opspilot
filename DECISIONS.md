@@ -13,6 +13,12 @@ Format:
 **Rejected:** <the alternative and why not>
 ```
 
+## 2026-08-17 — SSE streaming chat & persistent multi-turn conversational memory
+
+**Decision:** Server-Sent Events (`text/event-stream` via FastAPI `StreamingResponse`) with typed events (`token`, `citations`, `done`, `error`), backed by `chat_sessions` and `chat_messages` tables in Postgres. Prompt memory dynamically caps the last 6 messages (3 conversation turns) for multi-turn dialogue context.
+**Why:** Unidirectional HTTP streaming is lightweight and robust through standard reverse proxies without WebSocket connection management overhead. Dynamic turn-capping provides natural follow-up context while strictly bounding LLM context token usage. Single source of truth is preserved by buffering tokens locally during streaming and committing to Postgres + invalidating TanStack Query cache upon the `done` event.
+**Rejected:** WebSockets (unnecessary duplex complexity for a request-response chat stream), storing conversation history purely in client state (lost across devices/reloads), unbounded conversation history in prompt (risks token limit overflows and excessive latency).
+
 ## 2026-08-17 — RAG knowledge base foundation with pgvector & Gemini
 
 **Decision:** Postgres `pgvector` with HNSW cosine similarity index, chunking markdown ops docs, provider-agnostic `EmbeddingsProvider` & `LLMProvider` abstractions wrapping Gemini `text-embedding-004` and `gemini-1.5-flash`, with similarity threshold guardrail and citation tracking.
