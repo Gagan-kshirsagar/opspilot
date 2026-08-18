@@ -1,0 +1,254 @@
+[
+  {
+    "id": "kb-01-payment-failover",
+    "question": "What is the circuit breaker threshold and retry policy for payment processing failover?",
+    "category": "kb",
+    "must_cite": ["Payment Processing Gateway Fallback and Retry Policy"],
+    "expected_tools": ["retrieve_docs"],
+    "expected_points": ["10%", "4,000ms", "secondary gateway", "exponential backoff", "Idempotency-Key"],
+    "should_decline": false
+  },
+  {
+    "id": "kb-02-elasticsearch-recovery",
+    "question": "How do we recover an Elasticsearch cluster node after an out-of-memory crash?",
+    "category": "kb",
+    "must_cite": ["Elasticsearch and Search Index Cluster Recovery"],
+    "expected_tools": ["retrieve_docs"],
+    "expected_points": ["heap dump", "JVM heap", "cluster health", "_cluster/health", "green"],
+    "should_decline": false
+  },
+  {
+    "id": "kb-03-service-slas",
+    "question": "What are the SLA availability targets and MTTR requirements for Tier 1 critical services?",
+    "category": "kb",
+    "must_cite": ["Service Level Agreements (SLAs) & Availability Targets"],
+    "expected_tools": ["retrieve_docs"],
+    "expected_points": ["99.95%", "15 minutes", "Tier 1", "Payment Processing", "Auth Service"],
+    "should_decline": false
+  },
+  {
+    "id": "kb-04-oncall-escalation",
+    "question": "What is the escalation timeline when a primary on-call engineer does not acknowledge a SEV1 incident?",
+    "category": "kb",
+    "must_cite": ["On-Call and Escalation Policy"],
+    "expected_tools": ["retrieve_docs"],
+    "expected_points": ["5 minutes", "secondary on-call", "Engineering Lead", "SEV1"],
+    "should_decline": false
+  },
+  {
+    "id": "kb-05-database-backup",
+    "question": "What is the automated backup frequency and RPO target for the primary Postgres database?",
+    "category": "kb",
+    "must_cite": ["Database Backup and Recovery Runbook"],
+    "expected_tools": ["retrieve_docs"],
+    "expected_points": ["WAL archiving", "RPO", "5 minutes", "point-in-time recovery", "hourly snapshots"],
+    "should_decline": false
+  },
+  {
+    "id": "kb-06-ddos-mitigation",
+    "question": "What rate limiting thresholds and mitigation steps apply when the API Gateway detects a DDoS burst?",
+    "category": "kb",
+    "must_cite": ["Rate Limiting and DDoS Mitigation Guide"],
+    "expected_tools": ["retrieve_docs"],
+    "expected_points": ["Cloudflare", "API Gateway", "HTTP 429", "IP ban", "token bucket"],
+    "should_decline": false
+  },
+  {
+    "id": "kb-07-postmortem-guidelines",
+    "question": "Within what time window must a blameless postmortem be published following a SEV1 incident?",
+    "category": "kb",
+    "must_cite": ["Postmortem Guidelines & Incident Review Template"],
+    "expected_tools": ["retrieve_docs"],
+    "expected_points": ["48 hours", "blameless", "root cause", "action items", "SEV1"],
+    "should_decline": false
+  },
+  {
+    "id": "srv-01-degraded-list",
+    "question": "Which services are currently degraded or down?",
+    "category": "services",
+    "must_cite": [],
+    "expected_tools": ["query_services"],
+    "expected_points": ["Payment Processing", "Search Index", "Analytics Pipeline", "degraded", "down"],
+    "should_decline": false
+  },
+  {
+    "id": "srv-02-api-gateway-detail",
+    "question": "What is the health status, uptime percentage, and note for API Gateway?",
+    "category": "services",
+    "must_cite": [],
+    "expected_tools": ["get_service_detail"],
+    "expected_points": ["API Gateway", "healthy", "99.98", "Primary edge reverse proxy"],
+    "should_decline": false
+  },
+  {
+    "id": "srv-03-healthy-services",
+    "question": "List all healthy services in the fleet.",
+    "category": "services",
+    "must_cite": [],
+    "expected_tools": ["query_services"],
+    "expected_points": ["API Gateway", "Auth Service", "Notification Service", "healthy"],
+    "should_decline": false
+  },
+  {
+    "id": "srv-04-search-index-status",
+    "question": "What is the current status and uptime of Search Index?",
+    "category": "services",
+    "must_cite": [],
+    "expected_tools": ["get_service_detail"],
+    "expected_points": ["Search Index", "down", "84.50", "Elasticsearch"],
+    "should_decline": false
+  },
+  {
+    "id": "inc-01-sev1-open",
+    "question": "Are there any open SEV1 incidents currently active?",
+    "category": "incidents",
+    "must_cite": [],
+    "expected_tools": ["query_incidents"],
+    "expected_points": ["SEV1", "open", "Elasticsearch memory exhaustion", "Search Index"],
+    "should_decline": false
+  },
+  {
+    "id": "inc-02-investigating-list",
+    "question": "Which incidents are currently under investigation?",
+    "category": "incidents",
+    "must_cite": [],
+    "expected_tools": ["query_incidents"],
+    "expected_points": ["investigating", "Stripe webhook latency", "Telemetry partition 3"],
+    "should_decline": false
+  },
+  {
+    "id": "inc-03-payment-incidents",
+    "question": "What incidents are associated with the Payment Processing service?",
+    "category": "incidents",
+    "must_cite": [],
+    "expected_tools": ["query_incidents"],
+    "expected_points": ["Payment Processing", "Stripe webhook latency", "Duplicate charge events"],
+    "should_decline": false
+  },
+  {
+    "id": "inc-04-sev3-tls",
+    "question": "Show all SEV3 severity incidents currently open.",
+    "category": "incidents",
+    "must_cite": [],
+    "expected_tools": ["query_incidents"],
+    "expected_points": ["SEV3", "open", "TLS certificate expiration", "SMS provider rate limit"],
+    "should_decline": false
+  },
+  {
+    "id": "inc-05-analytics-pipeline-incidents",
+    "question": "Find all incidents impacting the Analytics Pipeline.",
+    "category": "incidents",
+    "must_cite": [],
+    "expected_tools": ["query_incidents"],
+    "expected_points": ["Analytics Pipeline", "Telemetry partition 3 rebalance loop", "Kafka broker disk"],
+    "should_decline": false
+  },
+  {
+    "id": "usr-01-admin-users",
+    "question": "Who are the administrators in the system?",
+    "category": "users",
+    "must_cite": [],
+    "expected_tools": ["query_users"],
+    "expected_points": ["admin", "role"],
+    "should_decline": false
+  },
+  {
+    "id": "usr-02-manager-users",
+    "question": "List users with the manager role.",
+    "category": "users",
+    "must_cite": [],
+    "expected_tools": ["query_users"],
+    "expected_points": ["manager"],
+    "should_decline": false
+  },
+  {
+    "id": "usr-03-search-user",
+    "question": "Find user accounts matching the search query 'lead'.",
+    "category": "users",
+    "must_cite": [],
+    "expected_tools": ["query_users"],
+    "expected_points": ["user"],
+    "should_decline": false
+  },
+  {
+    "id": "usr-04-user-roles-list",
+    "question": "Show all active user accounts with administrative access.",
+    "category": "users",
+    "must_cite": [],
+    "expected_tools": ["query_users"],
+    "expected_points": ["admin", "active"],
+    "should_decline": false
+  },
+  {
+    "id": "multi-01-search-cluster-triage",
+    "question": "Why is the Search Index service down, and what runbook steps should be followed to recover it?",
+    "category": "multi_tool",
+    "must_cite": ["Elasticsearch and Search Index Cluster Recovery"],
+    "expected_tools": ["get_service_detail", "retrieve_docs"],
+    "expected_points": ["Search Index", "down", "out-of-memory", "heap dump", "JVM", "_cluster/health"],
+    "should_decline": false
+  },
+  {
+    "id": "multi-02-payment-degraded-triage",
+    "question": "What is the status of Payment Processing, what active incidents exist for it, and how does gateway failover work?",
+    "category": "multi_tool",
+    "must_cite": ["Payment Processing Gateway Fallback and Retry Policy"],
+    "expected_tools": ["get_service_detail", "query_incidents", "retrieve_docs"],
+    "expected_points": ["Payment Processing", "degraded", "Stripe webhook latency", "circuit breaker", "fallback"],
+    "should_decline": false
+  },
+  {
+    "id": "multi-03-analytics-kafka-triage",
+    "question": "Which incidents affect Analytics Pipeline and what troubleshooting procedures apply to Kafka telemetry lag?",
+    "category": "multi_tool",
+    "must_cite": ["Kafka Stream and Telemetry Pipeline Troubleshooting"],
+    "expected_tools": ["query_incidents", "retrieve_docs"],
+    "expected_points": ["Analytics Pipeline", "Telemetry partition 3 rebalance loop", "consumer lag", "offset", "Kafka"],
+    "should_decline": false
+  },
+  {
+    "id": "multi-04-api-gateway-sla-check",
+    "question": "What is the uptime and health of API Gateway, and does it meet its Tier 1 SLA availability target?",
+    "category": "multi_tool",
+    "must_cite": ["Service Level Agreements (SLAs) & Availability Targets"],
+    "expected_tools": ["get_service_detail", "retrieve_docs"],
+    "expected_points": ["API Gateway", "99.98", "healthy", "Tier 1", "99.95%"],
+    "should_decline": false
+  },
+  {
+    "id": "oos-01-salary-inquiry",
+    "question": "What is the salary and bonus compensation package for the Director of Infrastructure?",
+    "category": "out_of_scope",
+    "must_cite": [],
+    "expected_tools": [],
+    "expected_points": ["don't have enough information", "not enough information"],
+    "should_decline": true
+  },
+  {
+    "id": "oos-02-lunch-menu",
+    "question": "What is being served for lunch in the company cafeteria today?",
+    "category": "out_of_scope",
+    "must_cite": [],
+    "expected_tools": [],
+    "expected_points": ["don't have enough information", "not enough information"],
+    "should_decline": true
+  },
+  {
+    "id": "oos-03-crypto-price",
+    "question": "What is the current live price and market cap of Bitcoin?",
+    "category": "out_of_scope",
+    "must_cite": [],
+    "expected_tools": [],
+    "expected_points": ["don't have enough information", "not enough information"],
+    "should_decline": true
+  },
+  {
+    "id": "oos-04-weather-forecast",
+    "question": "What is the 7-day weather forecast for San Francisco?",
+    "category": "out_of_scope",
+    "must_cite": [],
+    "expected_tools": [],
+    "expected_points": ["don't have enough information", "not enough information"],
+    "should_decline": true
+  }
+]

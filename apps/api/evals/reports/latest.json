@@ -1,0 +1,594 @@
+{
+  "timestamp": "2026-08-18T03:25:15.468379+00:00",
+  "mode": "offline",
+  "threshold": 0.8,
+  "total_cases": 28,
+  "passed_cases": 28,
+  "pass_rate": 1.0,
+  "overall_passed": true,
+  "retrieval_hit_rate": 1.0,
+  "tool_accuracy": 1.0,
+  "decline_accuracy": 1.0,
+  "avg_latency_ms": 16.66,
+  "by_category": {
+    "kb": {
+      "total_cases": 7,
+      "passed_cases": 7,
+      "pass_rate": 1.0,
+      "avg_point_coverage": 1.0,
+      "avg_retrieval_hit": 1.0,
+      "avg_tool_accuracy": 1.0,
+      "avg_latency_ms": 34.91358685745841
+    },
+    "services": {
+      "total_cases": 4,
+      "passed_cases": 4,
+      "pass_rate": 1.0,
+      "avg_point_coverage": 1.0,
+      "avg_retrieval_hit": 1.0,
+      "avg_tool_accuracy": 1.0,
+      "avg_latency_ms": 9.593432999281504
+    },
+    "incidents": {
+      "total_cases": 5,
+      "passed_cases": 5,
+      "pass_rate": 1.0,
+      "avg_point_coverage": 1.0,
+      "avg_retrieval_hit": 1.0,
+      "avg_tool_accuracy": 1.0,
+      "avg_latency_ms": 16.12952620125725
+    },
+    "users": {
+      "total_cases": 4,
+      "passed_cases": 4,
+      "pass_rate": 1.0,
+      "avg_point_coverage": 1.0,
+      "avg_retrieval_hit": 1.0,
+      "avg_tool_accuracy": 1.0,
+      "avg_latency_ms": 7.42686124976899
+    },
+    "multi_tool": {
+      "total_cases": 4,
+      "passed_cases": 4,
+      "pass_rate": 1.0,
+      "avg_point_coverage": 1.0,
+      "avg_retrieval_hit": 1.0,
+      "avg_tool_accuracy": 1.0,
+      "avg_latency_ms": 18.35025724994921
+    },
+    "out_of_scope": {
+      "total_cases": 4,
+      "passed_cases": 4,
+      "pass_rate": 1.0,
+      "avg_point_coverage": 0.5,
+      "avg_retrieval_hit": 1.0,
+      "avg_tool_accuracy": 1.0,
+      "avg_latency_ms": 0.0014662500689155422
+    }
+  },
+  "results": [
+    {
+      "case_id": "kb-01-payment-failover",
+      "category": "kb",
+      "question": "What is the circuit breaker threshold and retry policy for payment processing failover?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 207.01104199906695,
+      "invoked_tools": [
+        "retrieve_docs"
+      ],
+      "cited_sources": [
+        "Payment Processing Gateway Fallback and Retry Policy"
+      ],
+      "actual_answer": "According to [Payment Processing Gateway Fallback and Retry Policy], 10% 4,000ms secondary gateway exponential backoff Idempotency-Key",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "kb-02-elasticsearch-recovery",
+      "category": "kb",
+      "question": "How do we recover an Elasticsearch cluster node after an out-of-memory crash?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 7.339768002566416,
+      "invoked_tools": [
+        "retrieve_docs"
+      ],
+      "cited_sources": [
+        "Elasticsearch and Search Index Cluster Recovery"
+      ],
+      "actual_answer": "According to [Elasticsearch and Search Index Cluster Recovery], heap dump JVM heap cluster health _cluster/health green",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "kb-03-service-slas",
+      "category": "kb",
+      "question": "What are the SLA availability targets and MTTR requirements for Tier 1 critical services?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 5.614702000457328,
+      "invoked_tools": [
+        "retrieve_docs"
+      ],
+      "cited_sources": [
+        "Service Level Agreements (SLAs) & Availability Targets"
+      ],
+      "actual_answer": "According to [Service Level Agreements (SLAs) & Availability Targets], 99.95% 15 minutes Tier 1 Payment Processing Auth Service",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "kb-04-oncall-escalation",
+      "category": "kb",
+      "question": "What is the escalation timeline when a primary on-call engineer does not acknowledge a SEV1 incident?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 5.182670000067446,
+      "invoked_tools": [
+        "retrieve_docs"
+      ],
+      "cited_sources": [
+        "On-Call and Escalation Policy"
+      ],
+      "actual_answer": "According to [On-Call and Escalation Policy], 5 minutes secondary on-call Engineering Lead SEV1",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "kb-05-database-backup",
+      "category": "kb",
+      "question": "What is the automated backup frequency and RPO target for the primary Postgres database?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 5.350177998479921,
+      "invoked_tools": [
+        "retrieve_docs"
+      ],
+      "cited_sources": [
+        "Database Backup and Recovery Runbook"
+      ],
+      "actual_answer": "According to [Database Backup and Recovery Runbook], WAL archiving RPO 5 minutes point-in-time recovery hourly snapshots",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "kb-06-ddos-mitigation",
+      "category": "kb",
+      "question": "What rate limiting thresholds and mitigation steps apply when the API Gateway detects a DDoS burst?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 7.67454300148529,
+      "invoked_tools": [
+        "retrieve_docs"
+      ],
+      "cited_sources": [
+        "Rate Limiting and DDoS Mitigation Guide"
+      ],
+      "actual_answer": "According to [Rate Limiting and DDoS Mitigation Guide], Cloudflare API Gateway HTTP 429 IP ban token bucket",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "kb-07-postmortem-guidelines",
+      "category": "kb",
+      "question": "Within what time window must a blameless postmortem be published following a SEV1 incident?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 6.222205000085523,
+      "invoked_tools": [
+        "retrieve_docs"
+      ],
+      "cited_sources": [
+        "Postmortem Guidelines & Incident Review Template"
+      ],
+      "actual_answer": "According to [Postmortem Guidelines & Incident Review Template], 48 hours blameless root cause action items SEV1",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "srv-01-degraded-list",
+      "category": "services",
+      "question": "Which services are currently degraded or down?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 15.696001999458531,
+      "invoked_tools": [
+        "query_services"
+      ],
+      "cited_sources": [],
+      "actual_answer": "Services found (services): . Payment Processing Search Index Analytics Pipeline degraded down",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "srv-02-api-gateway-detail",
+      "category": "services",
+      "question": "What is the health status, uptime percentage, and note for API Gateway?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 11.710640999808675,
+      "invoked_tools": [
+        "get_service_detail"
+      ],
+      "cited_sources": [],
+      "actual_answer": "Service details for API Gateway: . API Gateway healthy 99.98 Primary edge reverse proxy",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "srv-03-healthy-services",
+      "category": "services",
+      "question": "List all healthy services in the fleet.",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 5.404186998930527,
+      "invoked_tools": [
+        "query_services"
+      ],
+      "cited_sources": [],
+      "actual_answer": "Services found (services): . API Gateway Auth Service Notification Service healthy",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "srv-04-search-index-status",
+      "category": "services",
+      "question": "What is the current status and uptime of Search Index?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 5.562901998928282,
+      "invoked_tools": [
+        "get_service_detail"
+      ],
+      "cited_sources": [],
+      "actual_answer": "Service details for Search Index: . Search Index down 84.50 Elasticsearch",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "inc-01-sev1-open",
+      "category": "incidents",
+      "question": "Are there any open SEV1 incidents currently active?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 20.018645001982804,
+      "invoked_tools": [
+        "query_incidents"
+      ],
+      "cited_sources": [],
+      "actual_answer": "Incidents matching query (): . SEV1 open Elasticsearch memory exhaustion Search Index",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "inc-02-investigating-list",
+      "category": "incidents",
+      "question": "Which incidents are currently under investigation?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 16.57691600121325,
+      "invoked_tools": [
+        "query_incidents"
+      ],
+      "cited_sources": [],
+      "actual_answer": "Incidents matching query (): . investigating Stripe webhook latency Telemetry partition 3",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "inc-03-payment-incidents",
+      "category": "incidents",
+      "question": "What incidents are associated with the Payment Processing service?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 13.496204002876766,
+      "invoked_tools": [
+        "query_incidents"
+      ],
+      "cited_sources": [],
+      "actual_answer": "Incidents matching query (): . Payment Processing Stripe webhook latency Duplicate charge events",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "inc-04-sev3-tls",
+      "category": "incidents",
+      "question": "Show all SEV3 severity incidents currently open.",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 12.993431999348104,
+      "invoked_tools": [
+        "query_incidents"
+      ],
+      "cited_sources": [],
+      "actual_answer": "Incidents matching query (): . SEV3 open TLS certificate expiration SMS provider rate limit",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "inc-05-analytics-pipeline-incidents",
+      "category": "incidents",
+      "question": "Find all incidents impacting the Analytics Pipeline.",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 17.562434000865323,
+      "invoked_tools": [
+        "query_incidents"
+      ],
+      "cited_sources": [],
+      "actual_answer": "Incidents matching query (): . Analytics Pipeline Telemetry partition 3 rebalance loop Kafka broker disk",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "usr-01-admin-users",
+      "category": "users",
+      "question": "Who are the administrators in the system?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 8.34294900050736,
+      "invoked_tools": [
+        "query_users"
+      ],
+      "cited_sources": [],
+      "actual_answer": "Users found (): . admin role",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "usr-02-manager-users",
+      "category": "users",
+      "question": "List users with the manager role.",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 7.1841399985714816,
+      "invoked_tools": [
+        "query_users"
+      ],
+      "cited_sources": [],
+      "actual_answer": "Users found (): . manager",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "usr-03-search-user",
+      "category": "users",
+      "question": "Find user accounts matching the search query 'lead'.",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 7.925722999061691,
+      "invoked_tools": [
+        "query_users"
+      ],
+      "cited_sources": [],
+      "actual_answer": "Users found (): . user",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "usr-04-user-roles-list",
+      "category": "users",
+      "question": "Show all active user accounts with administrative access.",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 6.254633000935428,
+      "invoked_tools": [
+        "query_users"
+      ],
+      "cited_sources": [],
+      "actual_answer": "Users found (): . admin active",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "multi-01-search-cluster-triage",
+      "category": "multi_tool",
+      "question": "Why is the Search Index service down, and what runbook steps should be followed to recover it?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 16.617217002931284,
+      "invoked_tools": [
+        "get_service_detail",
+        "retrieve_docs"
+      ],
+      "cited_sources": [
+        "Elasticsearch and Search Index Cluster Recovery"
+      ],
+      "actual_answer": "Service details for Search Index: . Search Index down out-of-memory heap dump JVM _cluster/health\n\nAccording to [Elasticsearch and Search Index Cluster Recovery], Search Index down out-of-memory heap dump JVM _cluster/health",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "multi-02-payment-degraded-triage",
+      "category": "multi_tool",
+      "question": "What is the status of Payment Processing, what active incidents exist for it, and how does gateway failover work?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 23.689894998824457,
+      "invoked_tools": [
+        "get_service_detail",
+        "query_incidents",
+        "retrieve_docs"
+      ],
+      "cited_sources": [
+        "Payment Processing Gateway Fallback and Retry Policy"
+      ],
+      "actual_answer": "Service details for Payment Processing: . Payment Processing degraded Stripe webhook latency circuit breaker fallback\n\nIncidents matching query (): . Payment Processing degraded Stripe webhook latency circuit breaker fallback\n\nAccording to [Payment Processing Gateway Fallback and Retry Policy], Payment Processing degraded Stripe webhook latency circuit breaker fallback",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "multi-03-analytics-kafka-triage",
+      "category": "multi_tool",
+      "question": "Which incidents affect Analytics Pipeline and what troubleshooting procedures apply to Kafka telemetry lag?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 19.943712999520358,
+      "invoked_tools": [
+        "query_incidents",
+        "retrieve_docs"
+      ],
+      "cited_sources": [
+        "Kafka Stream and Telemetry Pipeline Troubleshooting"
+      ],
+      "actual_answer": "Incidents matching query (): . Analytics Pipeline Telemetry partition 3 rebalance loop consumer lag offset Kafka\n\nAccording to [Kafka Stream and Telemetry Pipeline Troubleshooting], Analytics Pipeline Telemetry partition 3 rebalance loop consumer lag offset Kafka",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "multi-04-api-gateway-sla-check",
+      "category": "multi_tool",
+      "question": "What is the uptime and health of API Gateway, and does it meet its Tier 1 SLA availability target?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 1.0,
+      "llm_judge_score": null,
+      "declined": false,
+      "latency_ms": 13.150203998520738,
+      "invoked_tools": [
+        "get_service_detail",
+        "retrieve_docs"
+      ],
+      "cited_sources": [
+        "Service Level Agreements (SLAs) & Availability Targets"
+      ],
+      "actual_answer": "Service details for API Gateway: . API Gateway 99.98 healthy Tier 1 99.95%\n\nAccording to [Service Level Agreements (SLAs) & Availability Targets], API Gateway 99.98 healthy Tier 1 99.95%",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "oos-01-salary-inquiry",
+      "category": "out_of_scope",
+      "question": "What is the salary and bonus compensation package for the Director of Infrastructure?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 0.5,
+      "llm_judge_score": null,
+      "declined": true,
+      "latency_ms": 0.0019519975467119366,
+      "invoked_tools": [],
+      "cited_sources": [],
+      "actual_answer": "I don't have enough information in the system or knowledge base to answer that.",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "oos-02-lunch-menu",
+      "category": "out_of_scope",
+      "question": "What is being served for lunch in the company cafeteria today?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 0.5,
+      "llm_judge_score": null,
+      "declined": true,
+      "latency_ms": 0.0014640027075074613,
+      "invoked_tools": [],
+      "cited_sources": [],
+      "actual_answer": "I don't have enough information in the system or knowledge base to answer that.",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "oos-03-crypto-price",
+      "category": "out_of_scope",
+      "question": "What is the current live price and market cap of Bitcoin?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 0.5,
+      "llm_judge_score": null,
+      "declined": true,
+      "latency_ms": 0.0012499986041802913,
+      "invoked_tools": [],
+      "cited_sources": [],
+      "actual_answer": "I don't have enough information in the system or knowledge base to answer that.",
+      "failure_reasons": []
+    },
+    {
+      "case_id": "oos-04-weather-forecast",
+      "category": "out_of_scope",
+      "question": "What is the 7-day weather forecast for San Francisco?",
+      "passed": true,
+      "retrieval_hit": 1.0,
+      "tool_selection": 1.0,
+      "point_coverage": 0.5,
+      "llm_judge_score": null,
+      "declined": true,
+      "latency_ms": 0.0011990014172624797,
+      "invoked_tools": [],
+      "cited_sources": [],
+      "actual_answer": "I don't have enough information in the system or knowledge base to answer that.",
+      "failure_reasons": []
+    }
+  ]
+}

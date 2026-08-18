@@ -67,5 +67,14 @@ jobs:
       - name: Run migrations
         run: uv run alembic upgrade head
 
+      - name: Seed database
+        run: uv run python -m app.seed.seed
+
+      - name: Ingest Knowledge Base
+        run: uv run python -m app.rag.ingest
+
+      - name: Run Evals Harness (Offline Gate)
+        run: uv run python -m app.evals.run --offline --threshold 0.80
+
       - name: Test (pytest)
         run: uv run pytest -q

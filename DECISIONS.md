@@ -13,6 +13,12 @@ Format:
 **Rejected:** <the alternative and why not>
 ```
 
+## 2026-08-18 — RAG & Agent evaluation harness with deterministic offline CI gate
+
+**Decision:** Built a 28-case golden dataset with a multi-metric scorer measuring citation recall (`must_cite`), tool selection accuracy (`expected_tools`), deterministic factual point coverage (`expected_points`), decline/hallucination detection on out-of-scope queries, and an offline runner gating CI builds (`--offline --threshold 0.80`).
+**Why:** Continuous regression testing for LLM retrieval and agentic tool routing without paying API costs or suffering network flakiness in CI. Offline execution against real repository tools executes under 20ms while validating that schemas, queries, and guardrails remain grounded.
+**Rejected:** Pure LLM-as-a-judge in CI (flaky, non-deterministic, requires API keys and budget for every push), mock-only tests that skip real tool execution (fails to detect DB schema or repository regressions).
+
 ## 2026-08-17 — ReAct agent with typed tool calling & reasoning stream
 
 **Decision:** Implemented a LangGraph ReAct-style agent graph with typed read-only tools (`retrieve_docs`, `query_services`, `query_incidents`, `query_users`, `get_service_detail`) calling existing repositories and retriever. Extended SSE streaming with `event: step` (`tool_call`, `tool_result`) and built a collapsible thought trail UI.

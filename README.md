@@ -293,6 +293,32 @@ feat(auth): demo-guest + JWT login end to end
 ...
 ```
 
+## RAG & Agent Evaluation Harness
+
+OpsPilot includes an automated evaluation harness that measures retrieval accuracy, tool selection, answer grounding, and hallucination resistance against a 28-case golden dataset.
+
+```bash
+# Run deterministic evaluation gate locally (offline / zero-network)
+python -m app.evals.run --offline --threshold 0.80
+
+# Filter by category
+python -m app.evals.run --offline --category kb
+
+# Live run with Gemini LLM-as-a-judge
+python -m app.evals.run --threshold 0.85
+```
+
+### Benchmark Results (Latest Run)
+*Report generated from [latest.md](file:///Users/gagankshirsagar/Desktop/opspilot/apps/api/evals/reports/latest.md)*
+
+| Metric | Score | Target | Status |
+| :--- | :---: | :---: | :---: |
+| **Overall Pass Rate** | **`100.0%`** (28/28) | `>=80.0%` | ✅ PASS |
+| **Retrieval Hit-Rate (Recall)** | **`100.0%`** | `>=90.0%` | ✅ PASS |
+| **Tool Selection Accuracy** | **`100.0%`** | `>=90.0%` | ✅ PASS |
+| **Decline / Refusal Accuracy** | **`100.0%`** | `100.0%` | ✅ PASS |
+| **Average Offline Latency** | **`16.7ms`** | `<500ms` | ⚡ FAST |
+
 ---
 
 ## If something breaks
