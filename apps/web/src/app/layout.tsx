@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import type React from "react";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -14,7 +15,11 @@ export const metadata: Metadata = {
     "AI-driven incident management — triage, diagnose, and resolve production issues faster.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en" className={`${inter.variable} dark h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans">
