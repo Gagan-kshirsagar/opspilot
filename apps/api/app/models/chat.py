@@ -6,14 +6,14 @@ import enum
 import uuid
 from typing import Any
 
-from sqlalchemy import Enum, ForeignKey, JSON, String, Text
+from sqlalchemy import JSON, Enum, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 
-class MessageRole(str, enum.Enum):
+class MessageRole(enum.StrEnum):
     """Role of the message sender."""
 
     USER = "user"

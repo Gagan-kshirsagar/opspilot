@@ -6,10 +6,10 @@ import json
 import logging
 import uuid
 from collections.abc import AsyncGenerator
+from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from datetime import datetime, timezone
 
 from app.core.config import get_settings
 from app.core.rate_store import get_rate_store
@@ -45,7 +45,7 @@ class ChatService:
         question = request.question.strip()
 
         # 0. Check global daily AI request budget
-        date_key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        date_key = datetime.now(UTC).strftime("%Y-%m-%d")
         rate_store = get_rate_store()
         allowed, _, _ = await rate_store.increment_daily_budget(
             date_key=date_key, max_budget=self.settings.DAILY_AI_LIMIT
@@ -123,7 +123,9 @@ class ChatService:
         if request.session_id is not None:
             chat_session = await repo.get_session(request.session_id, user_id=user_id)
             if chat_session is None:
-                err_payload = json.dumps({"message": "Chat session not found or forbidden"})
+                err_payload = json.dumps(
+                    {"message": "Chat session not found or forbidden"}
+                )
                 yield f"event: error\ndata: {err_payload}\n\n"
                 return
         else:
@@ -136,7 +138,10 @@ class ChatService:
             session_id=chat_session.id, limit=6
         )
         conversation_history: list[tuple[str, str]] = [
-            (msg.role.value if isinstance(msg.role, MessageRole) else str(msg.role), msg.content)
+            (
+                msg.role.value if isinstance(msg.role, MessageRole) else str(msg.role),
+                msg.content,
+            )
             for msg in prior_turns
         ]
 
@@ -149,7 +154,7 @@ class ChatService:
         await session.commit()
 
         # 4. Check global daily AI request budget
-        date_key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        date_key = datetime.now(UTC).strftime("%Y-%m-%d")
         rate_store = get_rate_store()
         allowed, _, _ = await rate_store.increment_daily_budget(
             date_key=date_key, max_budget=self.settings.DAILY_AI_LIMIT
@@ -267,9 +272,13 @@ class ChatService:
                 ChatMessageOut(
                     id=m.id,
                     session_id=m.session_id,
-                    role=m.role.value if isinstance(m.role, MessageRole) else str(m.role),
+                    role=m.role.value
+                    if isinstance(m.role, MessageRole)
+                    else str(m.role),
                     content=m.content,
-                    citations=[Citation(**c) for c in m.citations] if m.citations else None,
+                    citations=[Citation(**c) for c in m.citations]
+                    if m.citations
+                    else None,
                     created_at=m.created_at,
                 )
                 for m in messages

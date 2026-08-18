@@ -51,8 +51,8 @@ class GeminiEmbeddingsProvider:
         resp = await client.post(url, headers=headers, json=payload)
         resp.raise_for_status()
         data = resp.json()
-        embedding = data.get("embedding", {}).get("values", [0.0] * 768)
-        return embedding
+        raw_vals = data.get("embedding", {}).get("values", [0.0] * 768)
+        return [float(x) for x in raw_vals]
 
     async def embed_texts(self, texts: list[str]) -> list[list[float]]:
         """Batch embed multiple texts concurrently using embedContent."""
@@ -60,7 +60,9 @@ class GeminiEmbeddingsProvider:
             return []
 
         if not self.api_key:
-            logger.warning("No GEMINI_API_KEY configured; returning zero vectors for embeddings.")
+            logger.warning(
+                "No GEMINI_API_KEY configured; returning zero vectors for embeddings."
+            )
             return [[0.0] * 768 for _ in texts]
 
         # Use semaphore to bound concurrency to avoid rate limits

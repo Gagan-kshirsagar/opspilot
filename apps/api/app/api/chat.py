@@ -97,7 +97,10 @@ async def list_chat_sessions(
     status_code=status.HTTP_200_OK,
     responses={
         401: {"model": ErrorResponse},
-        403: {"model": ErrorResponse, "description": "Forbidden — user does not own session"},
+        403: {
+            "model": ErrorResponse,
+            "description": "Forbidden — user does not own session",
+        },
         404: {"model": ErrorResponse, "description": "Session not found"},
     },
 )
@@ -109,6 +112,7 @@ async def get_chat_session_detail(
     """Retrieve full message history for a specific chat session."""
     # Check if session exists at all (for distinction between 404 and 403)
     from app.repositories.chat_repo import ChatRepository
+
     repo = ChatRepository(session)
     any_session = await repo.get_session(session_id)
     if any_session is None:
@@ -122,7 +126,9 @@ async def get_chat_session_detail(
             detail="Access forbidden to another user's chat session",
         )
 
-    detail = await _service.get_session_detail(session_id=session_id, user_id=user.id, session=session)
+    detail = await _service.get_session_detail(
+        session_id=session_id, user_id=user.id, session=session
+    )
     if detail is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -136,7 +142,10 @@ async def get_chat_session_detail(
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
         401: {"model": ErrorResponse},
-        404: {"model": ErrorResponse, "description": "Session not found or not owned by user"},
+        404: {
+            "model": ErrorResponse,
+            "description": "Session not found or not owned by user",
+        },
     },
 )
 async def delete_chat_session(
@@ -145,7 +154,9 @@ async def delete_chat_session(
     user: Annotated[User, Depends(get_current_user)],
 ) -> None:
     """Delete a chat session and all its messages."""
-    deleted = await _service.delete_session(session_id=session_id, user_id=user.id, session=session)
+    deleted = await _service.delete_session(
+        session_id=session_id, user_id=user.id, session=session
+    )
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

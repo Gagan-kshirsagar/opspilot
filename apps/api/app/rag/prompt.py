@@ -43,7 +43,9 @@ def format_rag_prompt(
         for role, text in conversation_history:
             prefix = "User:" if role == "user" else "Assistant:"
             history_lines.append(f"{prefix} {text.strip()}")
-        history_str = "Prior Conversation History:\n" + "\n".join(history_lines) + "\n\n"
+        history_str = (
+            "Prior Conversation History:\n" + "\n".join(history_lines) + "\n\n"
+        )
 
     return f"""{history_str}Knowledge Base Context:
 {context_str}

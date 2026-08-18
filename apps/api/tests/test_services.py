@@ -6,10 +6,8 @@ import uuid
 
 import pytest
 from httpx import AsyncClient
-from sqlalchemy import update
 
 from app.models.service import Service, ServiceStatus
-from app.models.user import User, UserRole
 from tests.conftest import _session_factory
 
 

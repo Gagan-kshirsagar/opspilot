@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any
 
-from sqlalchemy import Select, case, func, or_, select
+from sqlalchemy import Select, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.incident import Incident, IncidentSeverity, IncidentStatus
@@ -25,7 +26,7 @@ class IncidentRepository:
     async def resolve(self, incident: Incident) -> Incident:
         """Mark an incident as resolved and record resolved_at timestamp."""
         incident.status = IncidentStatus.RESOLVED
-        incident.resolved_at = datetime.now(timezone.utc)
+        incident.resolved_at = datetime.now(UTC)
         await self._session.flush()
         await self._session.refresh(incident)
         return incident
@@ -81,6 +82,7 @@ class IncidentRepository:
         total = total_result.scalar_one()
 
         # ── Sorting ──────────────────────────────────────
+        sort_expr: Any
         if sort_by == "severity":
             sort_expr = case(
                 (Incident.severity == IncidentSeverity.SEV1, 1),

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,9 +37,7 @@ class AuthService:
                 detail="An account with this email already exists.",
             )
 
-        auth_user = await self._provider.create_user(
-            email, password, name, session
-        )
+        auth_user = await self._provider.create_user(email, password, name, session)
         tokens = self._provider.issue_tokens(auth_user)
         return self._build_response(auth_user, tokens)
 
@@ -74,7 +72,7 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or expired refresh token.",
-            )
+            ) from None
 
         if claims.type != "refresh":
             raise HTTPException(
@@ -101,9 +99,7 @@ class AuthService:
     # ── Helpers ───────────────────────────────────────────
 
     @staticmethod
-    def _build_response(
-        auth_user: AuthUser, tokens: TokenPairInternal
-    ) -> AuthResponse:
+    def _build_response(auth_user: AuthUser, tokens: TokenPairInternal) -> AuthResponse:
         """Map internal dataclasses → Pydantic response schemas."""
         user_resp = AuthUserResponse(
             id=auth_user.id,
@@ -112,7 +108,7 @@ class AuthService:
             role=auth_user.role,
             status="active",
             is_guest=auth_user.is_guest,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         token_resp = TokenPairSchema(
             access_token=tokens.access_token,

@@ -7,16 +7,17 @@ Create Date: 2026-08-17
 
 from __future__ import annotations
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import pgvector.sqlalchemy
 import sqlalchemy as sa
+
 from alembic import op
 
 revision: str = "004"
-down_revision: Union[str, None] = "003"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "003"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -80,7 +81,9 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_document_chunks_document_id", "document_chunks", ["document_id"])
+    op.create_index(
+        "ix_document_chunks_document_id", "document_chunks", ["document_id"]
+    )
     op.execute(
         "CREATE INDEX IF NOT EXISTS ix_document_chunks_embedding "
         "ON document_chunks USING hnsw (embedding vector_cosine_ops);"

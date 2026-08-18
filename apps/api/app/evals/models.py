@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from enum import Enum
-from typing import Any
+from enum import StrEnum
+
 from pydantic import BaseModel, Field
 
 
-class EvalCategory(str, Enum):
+class EvalCategory(StrEnum):
     KB = "kb"
     SERVICES = "services"
     INCIDENTS = "incidents"
@@ -20,7 +20,9 @@ class EvalCase(BaseModel):
     """A single evaluation case with ground truth criteria."""
 
     id: str = Field(..., description="Unique slug identifying the evaluation case.")
-    question: str = Field(..., description="User question or prompt to submit to the agent/retriever.")
+    question: str = Field(
+        ..., description="User question or prompt to submit to the agent/retriever."
+    )
     category: EvalCategory = Field(..., description="Category of the test case.")
     expected_points: list[str] = Field(
         default_factory=list,
@@ -47,12 +49,24 @@ class CaseResult(BaseModel):
     category: EvalCategory
     question: str
     passed: bool
-    retrieval_hit: float = Field(..., ge=0.0, le=1.0, description="Citation recall vs must_cite docs.")
-    tool_selection: float = Field(..., ge=0.0, le=1.0, description="Tool selection accuracy vs expected_tools.")
-    point_coverage: float = Field(..., ge=0.0, le=1.0, description="Deterministic factual point coverage score.")
-    llm_judge_score: float | None = Field(default=None, description="Optional LLM-as-judge score (1.0 to 5.0).")
-    declined: bool = Field(default=False, description="Whether the agent successfully declined.")
-    latency_ms: float = Field(..., ge=0.0, description="Wall clock execution time in milliseconds.")
+    retrieval_hit: float = Field(
+        ..., ge=0.0, le=1.0, description="Citation recall vs must_cite docs."
+    )
+    tool_selection: float = Field(
+        ..., ge=0.0, le=1.0, description="Tool selection accuracy vs expected_tools."
+    )
+    point_coverage: float = Field(
+        ..., ge=0.0, le=1.0, description="Deterministic factual point coverage score."
+    )
+    llm_judge_score: float | None = Field(
+        default=None, description="Optional LLM-as-judge score (1.0 to 5.0)."
+    )
+    declined: bool = Field(
+        default=False, description="Whether the agent successfully declined."
+    )
+    latency_ms: float = Field(
+        ..., ge=0.0, description="Wall clock execution time in milliseconds."
+    )
     invoked_tools: list[str] = Field(default_factory=list)
     cited_sources: list[str] = Field(default_factory=list)
     actual_answer: str = Field(default="")

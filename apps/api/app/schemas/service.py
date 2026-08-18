@@ -6,12 +6,12 @@ import enum
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from app.schemas.user import SortDirection
 
 
-class ServiceSortByField(str, enum.Enum):
+class ServiceSortByField(enum.StrEnum):
     """Allowed sort columns for service listing."""
 
     NAME = "name"

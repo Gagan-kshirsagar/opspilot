@@ -20,7 +20,9 @@ def load_eval_cases(category: EvalCategory | str | None = None) -> list[EvalCase
     cases = [EvalCase.model_validate(item) for item in raw_data]
 
     if category:
-        cat_str = category.value if isinstance(category, EvalCategory) else str(category)
+        cat_str = (
+            category.value if isinstance(category, EvalCategory) else str(category)
+        )
         cases = [c for c in cases if c.category.value == cat_str]
 
     return cases

@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from app.models.user import User
 
 
-class ServiceStatus(str, enum.Enum):
+class ServiceStatus(enum.StrEnum):
     """Operational status of a service."""
 
     HEALTHY = "healthy"
@@ -38,9 +38,7 @@ class Service(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         default=ServiceStatus.HEALTHY,
         index=True,
     )
-    uptime_pct: Mapped[float] = mapped_column(
-        Float, nullable=False, default=100.0
-    )
+    uptime_pct: Mapped[float] = mapped_column(Float, nullable=False, default=100.0)
     owner_user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"),
         nullable=False,

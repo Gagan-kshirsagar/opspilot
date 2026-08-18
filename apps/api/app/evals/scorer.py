@@ -6,7 +6,6 @@ import datetime
 import json
 import logging
 import re
-from typing import Any
 
 import httpx
 
@@ -53,16 +52,14 @@ def calculate_retrieval_hit(cited_sources: list[str], must_cite: list[str]) -> f
         norm_req = _normalize(required)
         # 1. Direct substring match
         found = any(
-            norm_req in cited or cited in norm_req
-            for cited in normalized_citations
+            norm_req in cited or cited in norm_req for cited in normalized_citations
         )
         # 2. Token overlap match (all keywords with len > 3 present in cited doc title)
         if not found:
             req_words = [w for w in norm_req.split() if len(w) > 3]
             if req_words:
                 found = any(
-                    all(w in cited for w in req_words)
-                    for cited in normalized_citations
+                    all(w in cited for w in req_words) for cited in normalized_citations
                 )
 
         if found:
@@ -71,7 +68,9 @@ def calculate_retrieval_hit(cited_sources: list[str], must_cite: list[str]) -> f
     return hits / len(must_cite)
 
 
-def calculate_tool_selection(invoked_tools: list[str], expected_tools: list[str]) -> float:
+def calculate_tool_selection(
+    invoked_tools: list[str], expected_tools: list[str]
+) -> float:
     """Calculate recall of expected tools against actual invoked tools."""
     if not expected_tools:
         # If no tools were expected (e.g. out of scope)
@@ -157,7 +156,10 @@ Respond ONLY with a JSON object in this exact format:
     headers = {"x-goog-api-key": api_key, "Content-Type": "application/json"}
     payload = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.0, "responseMimeType": "application/json"},
+        "generationConfig": {
+            "temperature": 0.0,
+            "responseMimeType": "application/json",
+        },
     }
 
     try:
@@ -193,27 +195,45 @@ def score_case(
     if case.should_decline:
         passed = declined
         if not declined:
-            failure_reasons.append("Agent failed to decline an out-of-scope query (hallucination risk)")
+            failure_reasons.append(
+                "Agent failed to decline an out-of-scope query (hallucination risk)"
+            )
     elif case.category == EvalCategory.KB:
         passed = retrieval_hit >= 1.0 and point_coverage >= 0.70
         if retrieval_hit < 1.0:
-            failure_reasons.append(f"Missing required citations: expected {case.must_cite}, got {cited_sources}")
+            failure_reasons.append(
+                f"Missing required citations: expected {case.must_cite}, got {cited_sources}"
+            )
         if point_coverage < 0.70:
-            failure_reasons.append(f"Low point coverage ({point_coverage:.1%}): missing key facts")
+            failure_reasons.append(
+                f"Low point coverage ({point_coverage:.1%}): missing key facts"
+            )
     elif case.category == EvalCategory.MULTI_TOOL:
-        passed = tool_selection >= 1.0 and retrieval_hit >= 1.0 and point_coverage >= 0.60
+        passed = (
+            tool_selection >= 1.0 and retrieval_hit >= 1.0 and point_coverage >= 0.60
+        )
         if tool_selection < 1.0:
-            failure_reasons.append(f"Missing required tools: expected {case.expected_tools}, got {invoked_tools}")
+            failure_reasons.append(
+                f"Missing required tools: expected {case.expected_tools}, got {invoked_tools}"
+            )
         if retrieval_hit < 1.0:
-            failure_reasons.append(f"Missing required citations: expected {case.must_cite}, got {cited_sources}")
+            failure_reasons.append(
+                f"Missing required citations: expected {case.must_cite}, got {cited_sources}"
+            )
         if point_coverage < 0.60:
-            failure_reasons.append(f"Low point coverage ({point_coverage:.1%}) in multi-tool synthesis")
+            failure_reasons.append(
+                f"Low point coverage ({point_coverage:.1%}) in multi-tool synthesis"
+            )
     else:  # Services, Incidents, Users
         passed = tool_selection >= 1.0 and point_coverage >= 0.60
         if tool_selection < 1.0:
-            failure_reasons.append(f"Missing expected tools: expected {case.expected_tools}, got {invoked_tools}")
+            failure_reasons.append(
+                f"Missing expected tools: expected {case.expected_tools}, got {invoked_tools}"
+            )
         if point_coverage < 0.60:
-            failure_reasons.append(f"Low point coverage ({point_coverage:.1%}) in database answer")
+            failure_reasons.append(
+                f"Low point coverage ({point_coverage:.1%}) in database answer"
+            )
 
     return CaseResult(
         case_id=case.id,
@@ -243,13 +263,18 @@ def aggregate_results(
     passed_cases = sum(1 for r in results if r.passed)
     pass_rate = (passed_cases / total_cases) if total_cases > 0 else 0.0
 
-    kb_cases = [r for r in results if r.category in (EvalCategory.KB, EvalCategory.MULTI_TOOL)]
+    kb_cases = [
+        r for r in results if r.category in (EvalCategory.KB, EvalCategory.MULTI_TOOL)
+    ]
     retrieval_hit_rate = (
         sum(r.retrieval_hit for r in kb_cases) / len(kb_cases) if kb_cases else 1.0
     )
 
     tool_cases = [
-        r for r in results if r.category in (
+        r
+        for r in results
+        if r.category
+        in (
             EvalCategory.SERVICES,
             EvalCategory.INCIDENTS,
             EvalCategory.USERS,
@@ -257,7 +282,9 @@ def aggregate_results(
         )
     ]
     tool_accuracy = (
-        sum(r.tool_selection for r in tool_cases) / len(tool_cases) if tool_cases else 1.0
+        sum(r.tool_selection for r in tool_cases) / len(tool_cases)
+        if tool_cases
+        else 1.0
     )
 
     decline_cases = [r for r in results if r.category == EvalCategory.OUT_OF_SCOPE]
@@ -282,14 +309,15 @@ def aggregate_results(
             total_cases=len(cat_cases),
             passed_cases=c_passed,
             pass_rate=c_passed / len(cat_cases),
-            avg_point_coverage=sum(r.point_coverage for r in cat_cases) / len(cat_cases),
+            avg_point_coverage=sum(r.point_coverage for r in cat_cases)
+            / len(cat_cases),
             avg_retrieval_hit=sum(r.retrieval_hit for r in cat_cases) / len(cat_cases),
             avg_tool_accuracy=sum(r.tool_selection for r in cat_cases) / len(cat_cases),
             avg_latency_ms=sum(r.latency_ms for r in cat_cases) / len(cat_cases),
         )
 
     return AggregateReport(
-        timestamp=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        timestamp=datetime.datetime.now(datetime.UTC).isoformat(),
         mode=mode,
         threshold=threshold,
         total_cases=total_cases,

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,7 +31,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     REFRESH_COOKIE_NAME: str = "opspilot_refresh_token"
     REFRESH_COOKIE_SECURE: bool = False
-    REFRESH_COOKIE_SAMESITE: str = "lax"
+    REFRESH_COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "lax"
 
     # ── Auth provider ─────────────────────────────────────
     AUTH_PROVIDER: str = "jwt"

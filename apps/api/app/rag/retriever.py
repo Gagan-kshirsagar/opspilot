@@ -102,7 +102,11 @@ class Retriever:
 
         scored: list[tuple[RetrievedChunk, float]] = []
         for row in rows_all:
-            emb = list(row.DocumentChunk.embedding) if row.DocumentChunk.embedding is not None else []
+            emb = (
+                list(row.DocumentChunk.embedding)
+                if row.DocumentChunk.embedding is not None
+                else []
+            )
             sim = _cosine_similarity(query_vector, emb)
             chunk = RetrievedChunk(
                 chunk_id=row.DocumentChunk.id,

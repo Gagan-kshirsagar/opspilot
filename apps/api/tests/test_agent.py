@@ -3,20 +3,13 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
 from collections.abc import AsyncGenerator
+from typing import Any
 
 import pytest
-from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.graph import AgentRunner, set_agent_llm_handler
 from app.agent.tools import (
-    execute_get_service_detail,
-    execute_query_incidents,
-    execute_query_services,
-    execute_query_users,
-    execute_retrieve_docs,
     execute_tool,
 )
 from app.models.document import Document, DocumentChunk, DocumentKind
@@ -117,7 +110,9 @@ async def seed_agent_data() -> None:
 async def test_tool_execute_query_services(seed_agent_data: None) -> None:
     """query_services tool lists live service statuses."""
     async with _session_factory() as session:
-        res, summary = await execute_tool("query_services", {"status": "degraded"}, session)
+        res, summary = await execute_tool(
+            "query_services", {"status": "degraded"}, session
+        )
         assert res["count"] == 1
         assert res["services"][0]["name"] == "Payment Gateway"
         assert res["services"][0]["status"] == "degraded"
@@ -128,7 +123,9 @@ async def test_tool_execute_query_services(seed_agent_data: None) -> None:
 async def test_tool_execute_query_incidents(seed_agent_data: None) -> None:
     """query_incidents tool lists active incidents with filters."""
     async with _session_factory() as session:
-        res, summary = await execute_tool("query_incidents", {"severity": "sev1", "status": "open"}, session)
+        res, summary = await execute_tool(
+            "query_incidents", {"severity": "sev1", "status": "open"}, session
+        )
         assert res["total_count"] == 1
         assert res["incidents"][0]["title"] == "Payment gateway connection timeout"
         assert res["incidents"][0]["severity"] == "sev1"
@@ -138,7 +135,9 @@ async def test_tool_execute_query_incidents(seed_agent_data: None) -> None:
 async def test_tool_execute_get_service_detail(seed_agent_data: None) -> None:
     """get_service_detail returns service health and open incident count."""
     async with _session_factory() as session:
-        res, summary = await execute_tool("get_service_detail", {"name_or_id": "Payment Gateway"}, session)
+        res, summary = await execute_tool(
+            "get_service_detail", {"name_or_id": "Payment Gateway"}, session
+        )
         assert res["name"] == "Payment Gateway"
         assert res["status"] == "degraded"
         assert res["open_incidents"] == 1
@@ -149,7 +148,9 @@ async def test_tool_execute_retrieve_docs(seed_agent_data: None) -> None:
     """retrieve_docs retrieves knowledge base chunks."""
     async with _session_factory() as session:
         retriever = Retriever(top_k=4)
-        res, summary = await execute_tool("retrieve_docs", {"query": "Payment Gateway Runbook"}, session, retriever)
+        res, summary = await execute_tool(
+            "retrieve_docs", {"query": "Payment Gateway Runbook"}, session, retriever
+        )
         assert res["count"] > 0
         assert res["chunks"][0]["document_title"] == "Payment Gateway Runbook"
 
@@ -157,7 +158,10 @@ async def test_tool_execute_retrieve_docs(seed_agent_data: None) -> None:
 @pytest.mark.asyncio
 async def test_agent_runner_incident_question(seed_agent_data: None) -> None:
     """Agent emits tool_call and tool_result steps and synthesizes answer."""
-    async def mock_incident_handler(question: str, **kwargs: Any) -> AsyncGenerator[dict[str, Any], None]:
+
+    async def mock_incident_handler(
+        question: str, **kwargs: Any
+    ) -> AsyncGenerator[dict[str, Any], None]:
         # Step 1: Tool call
         yield {
             "event": "step",
@@ -168,7 +172,9 @@ async def test_agent_runner_incident_question(seed_agent_data: None) -> None:
             },
         }
         # Step 2: Tool result
-        res, summary = await execute_tool("query_incidents", {"severity": "sev1", "status": "open"}, kwargs["session"])
+        res, summary = await execute_tool(
+            "query_incidents", {"severity": "sev1", "status": "open"}, kwargs["session"]
+        )
         yield {
             "event": "step",
             "data": {
@@ -178,15 +184,28 @@ async def test_agent_runner_incident_question(seed_agent_data: None) -> None:
             },
         }
         # Step 3: Stream final tokens
-        yield {"event": "token", "data": {"text": "There is currently 1 open SEV-1 incident: Payment gateway connection timeout."}}
+        yield {
+            "event": "token",
+            "data": {
+                "text": "There is currently 1 open SEV-1 incident: Payment gateway connection timeout."
+            },
+        }
         yield {
             "event": "agent_done",
             "data": {
                 "final_answer": "There is currently 1 open SEV-1 incident: Payment gateway connection timeout.",
                 "citations": [],
                 "steps": [
-                    {"type": "tool_call", "tool": "query_incidents", "args": {"severity": "sev1", "status": "open"}},
-                    {"type": "tool_result", "tool": "query_incidents", "summary": summary},
+                    {
+                        "type": "tool_call",
+                        "tool": "query_incidents",
+                        "args": {"severity": "sev1", "status": "open"},
+                    },
+                    {
+                        "type": "tool_result",
+                        "tool": "query_incidents",
+                        "summary": summary,
+                    },
                 ],
             },
         }
@@ -213,40 +232,76 @@ async def test_agent_runner_incident_question(seed_agent_data: None) -> None:
 @pytest.mark.asyncio
 async def test_agent_runner_multi_tool_chaining(seed_agent_data: None) -> None:
     """Agent chains query_services then retrieve_docs and attaches citations."""
-    async def mock_multitool_handler(question: str, **kwargs: Any) -> AsyncGenerator[dict[str, Any], None]:
+
+    async def mock_multitool_handler(
+        question: str, **kwargs: Any
+    ) -> AsyncGenerator[dict[str, Any], None]:
         # Step 1: query_services
         yield {
             "event": "step",
-            "data": {"type": "tool_call", "tool": "query_services", "args": {"status": "degraded"}},
+            "data": {
+                "type": "tool_call",
+                "tool": "query_services",
+                "args": {"status": "degraded"},
+            },
         }
         yield {
             "event": "step",
-            "data": {"type": "tool_result", "tool": "query_services", "summary": "Found 1 degraded service"},
+            "data": {
+                "type": "tool_result",
+                "tool": "query_services",
+                "summary": "Found 1 degraded service",
+            },
         }
         # Step 2: retrieve_docs
         yield {
             "event": "step",
-            "data": {"type": "tool_call", "tool": "retrieve_docs", "args": {"query": "Payment Gateway Runbook"}},
+            "data": {
+                "type": "tool_call",
+                "tool": "retrieve_docs",
+                "args": {"query": "Payment Gateway Runbook"},
+            },
         }
         yield {
             "event": "step",
-            "data": {"type": "tool_result", "tool": "retrieve_docs", "summary": "Found 1 runbook"},
+            "data": {
+                "type": "tool_result",
+                "tool": "retrieve_docs",
+                "summary": "Found 1 runbook",
+            },
         }
         yield {
             "event": "citations",
             "data": {
                 "citations": [
-                    {"document_title": "Payment Gateway Runbook", "ordinal": 0, "snippet": "restart pods", "score": 0.9}
+                    {
+                        "document_title": "Payment Gateway Runbook",
+                        "ordinal": 0,
+                        "snippet": "restart pods",
+                        "score": 0.9,
+                    }
                 ],
                 "used_context": True,
             },
         }
-        yield {"event": "token", "data": {"text": "Payment Gateway is degraded. Follow Payment Gateway Runbook to restart pods."}}
+        yield {
+            "event": "token",
+            "data": {
+                "text": "Payment Gateway is degraded. Follow Payment Gateway Runbook to restart pods."
+            },
+        }
         yield {
             "event": "agent_done",
             "data": {
                 "final_answer": "Payment Gateway is degraded. Follow Payment Gateway Runbook to restart pods.",
-                "citations": [{"document_title": "Payment Gateway Runbook", "ordinal": 0, "snippet": "restart pods", "score": 0.9}],
+                "citations": [
+                    {
+                        "document_title": "Payment Gateway Runbook",
+                        "ordinal": 0,
+                        "snippet": "restart pods",
+                        "score": 0.9,
+                    }
+                ],
                 "steps": [],
             },
         }
@@ -256,7 +311,9 @@ async def test_agent_runner_multi_tool_chaining(seed_agent_data: None) -> None:
     async with _session_factory() as session:
         runner = AgentRunner(session=session)
         events = []
-        async for evt in runner.run_stream("Which services are degraded and what's the runbook?"):
+        async for evt in runner.run_stream(
+            "Which services are degraded and what's the runbook?"
+        ):
             events.append(evt)
 
         event_names = [e["event"] for e in events]

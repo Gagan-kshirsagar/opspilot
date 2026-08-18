@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from httpx import AsyncClient
@@ -21,7 +21,11 @@ async def users_and_tokens(client: AsyncClient) -> dict[str, tuple[uuid.UUID, st
     # Register manager
     resp_mgr = await client.post(
         "/api/v1/auth/register",
-        json={"email": "manager@test.com", "password": "securepassword", "name": "Manager"},
+        json={
+            "email": "manager@test.com",
+            "password": "securepassword",
+            "name": "Manager",
+        },
     )
     mgr_id = uuid.UUID(resp_mgr.json()["user"]["id"])
     mgr_token = resp_mgr.json()["tokens"]["access_token"]
@@ -29,7 +33,11 @@ async def users_and_tokens(client: AsyncClient) -> dict[str, tuple[uuid.UUID, st
     # Register viewer
     resp_view = await client.post(
         "/api/v1/auth/register",
-        json={"email": "viewer@test.com", "password": "securepassword", "name": "Viewer"},
+        json={
+            "email": "viewer@test.com",
+            "password": "securepassword",
+            "name": "Viewer",
+        },
     )
     view_id = uuid.UUID(resp_view.json()["user"]["id"])
     view_token = resp_view.json()["tokens"]["access_token"]
@@ -49,11 +57,11 @@ async def users_and_tokens(client: AsyncClient) -> dict[str, tuple[uuid.UUID, st
 
 @pytest.fixture
 async def setup_incident_data(
-    users_and_tokens: dict[str, tuple[uuid.UUID, str]]
+    users_and_tokens: dict[str, tuple[uuid.UUID, str]],
 ) -> tuple[uuid.UUID, list[uuid.UUID]]:
     """Set up service and multiple incidents."""
     mgr_id, _ = users_and_tokens["manager"]
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     service_id = uuid.uuid4()
     incident_ids = []
 

@@ -87,7 +87,9 @@ class IncidentService:
             severity=incident.severity.value,
             status=incident.status.value,
             service_id=incident.service_id,
-            service_name=incident.service.name if incident.service else "Unknown Service",
+            service_name=incident.service.name
+            if incident.service
+            else "Unknown Service",
             assignee_id=incident.assignee_id,
             assignee_name=incident.assignee.name if incident.assignee else None,
             resolved_at=incident.resolved_at,

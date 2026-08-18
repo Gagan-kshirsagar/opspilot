@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from app.schemas.user import SortDirection
 
 
-class IncidentSortByField(str, enum.Enum):
+class IncidentSortByField(enum.StrEnum):
     """Allowed sort columns for incident listing."""
 
     TITLE = "title"

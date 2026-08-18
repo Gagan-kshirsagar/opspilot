@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.chat import ChatMessage, ChatSession, MessageRole
@@ -58,7 +58,7 @@ class ChatRepository:
             ChatSession.user_id == user_id,
         )
         result = await self.session.execute(stmt)
-        return (result.rowcount or 0) > 0
+        return int(getattr(result, "rowcount", 0) or 0) > 0
 
     async def add_message(
         self,
@@ -81,7 +81,7 @@ class ChatRepository:
         # Update session timestamp
         session_obj = await self.get_session(session_id)
         if session_obj:
-            session_obj.updated_at = datetime.now(timezone.utc)
+            session_obj.updated_at = datetime.now(UTC)
 
         await self.session.flush()
         return msg

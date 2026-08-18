@@ -50,7 +50,7 @@ class UserRepository:
         stmt = delete(User).where(User.id.in_(ids))
         result = await self._session.execute(stmt)
         await self._session.flush()
-        return result.rowcount  # type: ignore[return-value]
+        return int(getattr(result, "rowcount", 0) or 0)
 
     async def list_paginated(
         self,
@@ -81,13 +81,17 @@ class UserRepository:
             )
         if role_filter:
             roles = [
-                UserRole(r) if isinstance(r, str) and r in UserRole._value2member_map_ else r
+                UserRole(r)
+                if isinstance(r, str) and r in UserRole._value2member_map_
+                else r
                 for r in role_filter
             ]
             base = base.where(User.role.in_(roles))
         if status_filter:
             statuses = [
-                UserStatus(s) if isinstance(s, str) and s in UserStatus._value2member_map_ else s
+                UserStatus(s)
+                if isinstance(s, str) and s in UserStatus._value2member_map_
+                else s
                 for s in status_filter
             ]
             base = base.where(User.status.in_(statuses))

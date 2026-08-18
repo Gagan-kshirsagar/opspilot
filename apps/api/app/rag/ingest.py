@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 import re
 import uuid
 from pathlib import Path
@@ -24,8 +23,11 @@ from app.models.document import Document, DocumentChunk, DocumentKind
 from app.rag.chunker import chunk_document
 from app.rag.embeddings import get_embeddings_provider
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
 logger = logging.getLogger(__name__)
+
 
 def _resolve_kb_dir() -> Path:
     candidates = [
@@ -51,7 +53,12 @@ def extract_title_and_kind(file_path: Path, text: str) -> tuple[str, DocumentKin
         title = file_path.stem.replace("_", " ").title()
 
     filename = file_path.name.lower()
-    if "runbook" in filename or "recovery" in filename or "troubleshooting" in filename or "procedure" in filename:
+    if (
+        "runbook" in filename
+        or "recovery" in filename
+        or "troubleshooting" in filename
+        or "procedure" in filename
+    ):
         kind = DocumentKind.RUNBOOK
     elif "policy" in filename or "rbac" in filename:
         kind = DocumentKind.POLICY
@@ -96,7 +103,9 @@ async def ingest_knowledge_base(session: AsyncSession) -> dict[str, int]:
         if existing_doc is not None:
             # Idempotent cleanup: delete old chunks for this doc
             await session.execute(
-                delete(DocumentChunk).where(DocumentChunk.document_id == existing_doc.id)
+                delete(DocumentChunk).where(
+                    DocumentChunk.document_id == existing_doc.id
+                )
             )
             doc = existing_doc
             doc.source = source

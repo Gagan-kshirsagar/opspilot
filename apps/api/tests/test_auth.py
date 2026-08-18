@@ -88,9 +88,7 @@ async def test_guest_login(client: AsyncClient) -> None:
     # Token works for /me.
     me_resp = await client.get(
         _ME,
-        headers={
-            "Authorization": f"Bearer {data['tokens']['access_token']}"
-        },
+        headers={"Authorization": f"Bearer {data['tokens']['access_token']}"},
     )
     assert me_resp.status_code == 200
     assert me_resp.json()["role"] == "guest"
@@ -106,18 +104,14 @@ async def test_refresh_token(
     refresh_token = registered_user["tokens"]["refresh_token"]  # type: ignore[index]
 
     # Valid refresh.
-    resp = await client.post(
-        _REFRESH, json={"refresh_token": refresh_token}
-    )
+    resp = await client.post(_REFRESH, json={"refresh_token": refresh_token})
     assert resp.status_code == 200
     new_tokens = resp.json()
     assert "access_token" in new_tokens
     assert "refresh_token" in new_tokens
 
     # Invalid refresh token.
-    bad_resp = await client.post(
-        _REFRESH, json={"refresh_token": "not-a-real-token"}
-    )
+    bad_resp = await client.post(_REFRESH, json={"refresh_token": "not-a-real-token"})
     assert bad_resp.status_code == 401
 
 
@@ -158,4 +152,3 @@ async def test_refresh_via_cookie_and_logout(
         "opspilot_refresh_token" not in logout_resp.cookies
         or logout_resp.cookies.get("opspilot_refresh_token") == ""
     )
-

@@ -8,11 +8,10 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
 
-
 # ── Enums ─────────────────────────────────────────────────
 
 
-class SortByField(str, enum.Enum):
+class SortByField(enum.StrEnum):
     """Allowed sort columns for user listing."""
 
     NAME = "name"
@@ -23,7 +22,7 @@ class SortByField(str, enum.Enum):
     LAST_ACTIVE = "last_active"
 
 
-class SortDirection(str, enum.Enum):
+class SortDirection(enum.StrEnum):
     """Sort direction."""
 
     ASC = "asc"

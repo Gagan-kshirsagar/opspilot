@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     pass
 
 
-class DocumentKind(str, enum.Enum):
+class DocumentKind(enum.StrEnum):
     """Classification of knowledge base documents."""
 
     RUNBOOK = "runbook"
@@ -68,4 +68,6 @@ class DocumentChunk(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     embedding: Mapped[Any] = mapped_column(Vector(768), nullable=False)
 
     # Relationships
-    document: Mapped[Document] = relationship("Document", back_populates="chunks", lazy="selectin")
+    document: Mapped[Document] = relationship(
+        "Document", back_populates="chunks", lazy="selectin"
+    )

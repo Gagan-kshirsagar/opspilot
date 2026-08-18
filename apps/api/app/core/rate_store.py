@@ -158,7 +158,10 @@ class UpstashRedisRateStore:
 
                     return False, 0, window_seconds
         except Exception as e:
-            logger.warning("Upstash Redis error on check_rate_limit: %s; falling back to memory store", e)
+            logger.warning(
+                "Upstash Redis error on check_rate_limit: %s; falling back to memory store",
+                e,
+            )
 
         return await self._fallback.check_rate_limit(key, limit, window_seconds)
 
@@ -185,7 +188,10 @@ class UpstashRedisRateStore:
                         return False, current, 0
                     return True, current, max(0, max_budget - current)
         except Exception as e:
-            logger.warning("Upstash Redis error on increment_daily_budget: %s; falling back to memory store", e)
+            logger.warning(
+                "Upstash Redis error on increment_daily_budget: %s; falling back to memory store",
+                e,
+            )
 
         return await self._fallback.increment_daily_budget(date_key, max_budget)
 
@@ -202,7 +208,10 @@ class UpstashRedisRateStore:
                     val = data.get("result")
                     return int(val) if val is not None else 0
         except Exception as e:
-            logger.warning("Upstash Redis error on get_daily_usage: %s; falling back to memory store", e)
+            logger.warning(
+                "Upstash Redis error on get_daily_usage: %s; falling back to memory store",
+                e,
+            )
 
         return await self._fallback.get_daily_usage(date_key)
 

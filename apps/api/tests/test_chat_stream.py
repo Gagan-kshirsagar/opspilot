@@ -1,23 +1,20 @@
-"""Tests for Server-Sent Events (SSE) streaming chat and multi-turn memory."""
-
 from __future__ import annotations
 
 import json
 import uuid
 from collections.abc import AsyncGenerator
+from typing import Any
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agent.graph import set_agent_llm_handler
 from app.models.chat import MessageRole
 from app.models.document import Document, DocumentChunk, DocumentKind
 from app.rag.embeddings import EmbeddingsProvider, set_embeddings_provider
-from app.rag.llm import LLMProvider, set_llm_provider
 from app.repositories.chat_repo import ChatRepository
 from tests.conftest import _session_factory
-
-
-from app.agent.graph import set_agent_llm_handler
 
 
 class MockStreamEmbeddings(EmbeddingsProvider):
@@ -52,12 +49,17 @@ async def mock_agent_stream_handler(
     if conversation_history:
         for r, c in conversation_history:
             history_lines.append(f"{r}: {c}")
-    last_agent_prompt = "Prior History: " + "\n".join(history_lines) + f" | Question: {question}"
+    last_agent_prompt = (
+        "Prior History: " + "\n".join(history_lines) + f" | Question: {question}"
+    )
 
     if "tokyo" in question.lower():
         # Decline out of KB
         yield {"event": "citations", "data": {"citations": [], "used_context": False}}
-        yield {"event": "token", "data": {"text": "I don't have that in the knowledge base."}}
+        yield {
+            "event": "token",
+            "data": {"text": "I don't have that in the knowledge base."},
+        }
         yield {
             "event": "agent_done",
             "data": {
@@ -170,7 +172,9 @@ def parse_sse_events(raw_text: str) -> list[tuple[str, dict]]:
 @pytest.mark.asyncio
 async def test_stream_chat_unauthenticated(client: AsyncClient) -> None:
     """Unauthenticated request returns 401."""
-    resp = await client.post("/api/v1/chat/stream", json={"question": "What is the SLA?"})
+    resp = await client.post(
+        "/api/v1/chat/stream", json={"question": "What is the SLA?"}
+    )
     assert resp.status_code == 401
 
 
@@ -200,7 +204,10 @@ async def test_stream_chat_creates_session_and_messages(
     citations_event = next(e for e in events if e[0] == "citations")
     assert citations_event[1]["used_context"] is True
     assert len(citations_event[1]["citations"]) > 0
-    assert citations_event[1]["citations"][0]["document_title"] == "Service Level Agreements"
+    assert (
+        citations_event[1]["citations"][0]["document_title"]
+        == "Service Level Agreements"
+    )
 
     # Check token events
     token_events = [e for e in events if e[0] == "token"]

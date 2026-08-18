@@ -36,6 +36,5 @@ def get_auth_provider(settings: Settings | None = None) -> AuthProvider:
         return FirebaseAuthProvider()
 
     raise ValueError(
-        f"Unknown auth provider: {provider_name!r}. "
-        f"Supported: 'jwt', 'firebase'."
+        f"Unknown auth provider: {provider_name!r}. Supported: 'jwt', 'firebase'."
     )

@@ -61,9 +61,7 @@ class ServiceService:
         )
 
     @classmethod
-    def _to_detail(
-        cls, service: Service, open_incident_count: int
-    ) -> ServiceDetailOut:
+    def _to_detail(cls, service: Service, open_incident_count: int) -> ServiceDetailOut:
         """Map Service ORM model to ServiceDetailOut schema."""
         base = cls._to_out(service)
         return ServiceDetailOut(

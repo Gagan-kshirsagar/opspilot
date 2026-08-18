@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+from jose import JWTError, jwt  # type: ignore[import-untyped]
+from passlib.context import CryptContext  # type: ignore[import-untyped]
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
@@ -59,7 +59,7 @@ class JwtAuthProvider:
 
     def issue_tokens(self, user: AuthUser) -> TokenPair:
         """Mint access (short-lived) and refresh (long-lived) JWTs."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         access_exp = now + timedelta(minutes=self._access_minutes)
         refresh_exp = now + timedelta(days=self._refresh_days)
 
@@ -94,9 +94,7 @@ class JwtAuthProvider:
     def verify_token(self, token: str) -> TokenClaims:
         """Decode *token* or raise ``ValueError`` on any failure."""
         try:
-            payload = jwt.decode(
-                token, self._secret, algorithms=[self._algorithm]
-            )
+            payload = jwt.decode(token, self._secret, algorithms=[self._algorithm])
         except JWTError as exc:
             raise ValueError(f"Invalid token: {exc}") from exc
 

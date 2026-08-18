@@ -1,9 +1,8 @@
-"""LLM provider abstraction and Gemini implementation."""
-
 from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
 from typing import Protocol
 
 import httpx
@@ -12,9 +11,6 @@ from app.core.config import get_settings
 from app.rag.prompt import DECLINE_MESSAGE, SYSTEM_PROMPT
 
 logger = logging.getLogger(__name__)
-
-
-from collections.abc import AsyncGenerator
 
 
 class LLMProvider(Protocol):
@@ -49,7 +45,9 @@ class GeminiLLMProvider:
         settings = get_settings()
         self.api_key = api_key or settings.GEMINI_API_KEY
         self.model_name = model_name or settings.GEMINI_CHAT_MODEL
-        self.temperature = temperature if temperature is not None else settings.RAG_TEMPERATURE
+        self.temperature = (
+            temperature if temperature is not None else settings.RAG_TEMPERATURE
+        )
         self.base_url = "https://generativelanguage.googleapis.com/v1beta"
 
     async def generate_response(
@@ -82,7 +80,12 @@ class GeminiLLMProvider:
             },
         }
 
-        fallback_models = [self.model_name, "gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3.6-flash"]
+        fallback_models = [
+            self.model_name,
+            "gemini-3.1-flash-lite",
+            "gemini-3.5-flash-lite",
+            "gemini-3.6-flash",
+        ]
         # Deduplicate while preserving order
         candidate_models = list(dict.fromkeys(fallback_models))
 
@@ -161,7 +164,12 @@ class GeminiLLMProvider:
             },
         }
 
-        fallback_models = [self.model_name, "gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3.6-flash"]
+        fallback_models = [
+            self.model_name,
+            "gemini-3.1-flash-lite",
+            "gemini-3.5-flash-lite",
+            "gemini-3.6-flash",
+        ]
         candidate_models = list(dict.fromkeys(fallback_models))
 
         stream_started = False
@@ -171,7 +179,9 @@ class GeminiLLMProvider:
             for model in candidate_models:
                 url = f"{self.base_url}/models/{model}:streamGenerateContent?alt=sse"
                 try:
-                    async with client.stream("POST", url, headers=headers, json=payload) as resp:
+                    async with client.stream(
+                        "POST", url, headers=headers, json=payload
+                    ) as resp:
                         if resp.status_code != 200:
                             continue
 
@@ -184,7 +194,11 @@ class GeminiLLMProvider:
                                     chunk = json.loads(data_str)
                                     candidates = chunk.get("candidates", [])
                                     if candidates:
-                                        parts = candidates[0].get("content", {}).get("parts", [])
+                                        parts = (
+                                            candidates[0]
+                                            .get("content", {})
+                                            .get("parts", [])
+                                        )
                                         for p in parts:
                                             if "text" in p and not p.get("thought"):
                                                 text = p["text"]

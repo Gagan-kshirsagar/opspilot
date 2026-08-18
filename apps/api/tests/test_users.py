@@ -28,11 +28,10 @@ async def admin_token(client: AsyncClient) -> str:
 
     # Promote to admin via direct DB manipulation
     from app.models.user import User, UserRole
-
     from tests.conftest import _session_factory
 
     async with _session_factory() as session:
-        from sqlalchemy import select, update
+        from sqlalchemy import update
 
         user_id = resp.json()["user"]["id"]
         await session.execute(
@@ -133,9 +132,7 @@ class TestListUsers:
         for item in data["items"]:
             assert item["status"] == "active"
 
-    async def test_list_users_unauthenticated(
-        self, client: AsyncClient
-    ) -> None:
+    async def test_list_users_unauthenticated(self, client: AsyncClient) -> None:
         """Unauthenticated request returns 401."""
         resp = await client.get("/api/v1/users")
         assert resp.status_code in (401, 403)
@@ -250,9 +247,7 @@ class TestDeleteUser:
     ) -> None:
         """Admin cannot delete themselves — returns 400."""
         # Get own user ID from /me
-        me_resp = await client.get(
-            "/api/v1/auth/me", headers=_auth(admin_token)
-        )
+        me_resp = await client.get("/api/v1/auth/me", headers=_auth(admin_token))
         assert me_resp.status_code == 200
         my_id = me_resp.json()["id"]
 

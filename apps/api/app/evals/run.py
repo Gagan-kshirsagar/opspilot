@@ -16,13 +16,12 @@ import json
 import logging
 import sys
 import time
-from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agent.graph import AgentRunner, set_agent_llm_handler
+from app.agent.graph import AgentRunner
 from app.agent.tools import (
     execute_get_service_detail,
     execute_query_incidents,
@@ -66,7 +65,11 @@ async def _offline_agent_execution(
     response_sections: list[str] = []
 
     if case.should_decline or case.category == EvalCategory.OUT_OF_SCOPE:
-        return "I don't have enough information in the system or knowledge base to answer that.", [], []
+        return (
+            "I don't have enough information in the system or knowledge base to answer that.",
+            [],
+            [],
+        )
 
     # Execute tools based on case requirements
     for tool_name in case.expected_tools:
@@ -79,7 +82,8 @@ async def _offline_agent_execution(
                     session=session,
                     retriever=retriever,
                 )
-                chunks = res.get("chunks", [])
+                res_dict: dict[str, Any] = res if isinstance(res, dict) else {}
+                chunks = res_dict.get("chunks", [])
                 for c in chunks:
                     doc_title = c.get("document_title", "")
                     if doc_title and doc_title not in cited_sources:
@@ -114,13 +118,15 @@ async def _offline_agent_execution(
                     args={"status": status_arg} if status_arg else {},
                     session=session,
                 )
-                srv_list = res.get("services", [])
+                res_dict_srv: dict[str, Any] = res if isinstance(res, dict) else {}
+                srv_list = res_dict_srv.get("services", [])
                 srv_names = ", ".join(s["name"] for s in srv_list)
             except Exception as e:
                 logger.debug("Offline query_services fallback: %s", e)
 
             response_sections.append(
-                f"Services found ({summary}): {srv_names}. " + " ".join(case.expected_points)
+                f"Services found ({summary}): {srv_names}. "
+                + " ".join(case.expected_points)
             )
 
         elif tool_name == "get_service_detail":
@@ -139,7 +145,10 @@ async def _offline_agent_execution(
             except Exception as e:
                 logger.debug("Offline get_service_detail fallback: %s", e)
 
-            response_sections.append(f"Service details for {target_name}: {summary}. " + " ".join(case.expected_points))
+            response_sections.append(
+                f"Service details for {target_name}: {summary}. "
+                + " ".join(case.expected_points)
+            )
 
         elif tool_name == "query_incidents":
             inc_titles = ""
@@ -160,13 +169,17 @@ async def _offline_agent_execution(
                     args={"status": status_arg, "severity": sev_arg},
                     session=session,
                 )
-                inc_list = res.get("incidents", [])
-                inc_titles = "; ".join(f"{i['title']} ({i['severity'].upper()})" for i in inc_list)
+                res_dict_inc: dict[str, Any] = res if isinstance(res, dict) else {}
+                inc_list = res_dict_inc.get("incidents", [])
+                inc_titles = "; ".join(
+                    f"{i['title']} ({i['severity'].upper()})" for i in inc_list
+                )
             except Exception as e:
                 logger.debug("Offline query_incidents fallback: %s", e)
 
             response_sections.append(
-                f"Incidents matching query ({summary}): {inc_titles}. " + " ".join(case.expected_points)
+                f"Incidents matching query ({summary}): {inc_titles}. "
+                + " ".join(case.expected_points)
             )
 
         elif tool_name == "query_users":
@@ -183,13 +196,15 @@ async def _offline_agent_execution(
                     args={"role": role_arg},
                     session=session,
                 )
-                users_list = res.get("users", [])
+                res_dict_usr: dict[str, Any] = res if isinstance(res, dict) else {}
+                users_list = res_dict_usr.get("users", [])
                 user_names = ", ".join(u["name"] for u in users_list)
             except Exception as e:
                 logger.debug("Offline query_users fallback: %s", e)
 
             response_sections.append(
-                f"Users found ({summary}): {user_names}. " + " ".join(case.expected_points)
+                f"Users found ({summary}): {user_names}. "
+                + " ".join(case.expected_points)
             )
 
     full_answer = "\n\n".join(response_sections)
@@ -267,7 +282,9 @@ async def run_evaluations(
             start_t = time.perf_counter()
 
             if offline:
-                answer, cited, tools = await _offline_agent_execution(case, session, retriever)
+                answer, cited, tools = await _offline_agent_execution(
+                    case, session, retriever
+                )
                 llm_judge = None
             else:
                 answer, cited, tools = await _live_agent_execution(case, session)
@@ -301,10 +318,14 @@ async def run_evaluations(
                 for reason in result.failure_reasons:
                     print(f"       └─ ⚠️  {reason}")
 
-    report = aggregate_results(results=results, threshold=threshold, mode="offline" if offline else "live")
+    report = aggregate_results(
+        results=results, threshold=threshold, mode="offline" if offline else "live"
+    )
 
     # Generate Reports
-    resolved_report_dir = report_dir or (Path(__file__).resolve().parent.parent.parent / "evals" / "reports")
+    resolved_report_dir = report_dir or (
+        Path(__file__).resolve().parent.parent.parent / "evals" / "reports"
+    )
     resolved_report_dir.mkdir(parents=True, exist_ok=True)
 
     _write_markdown_report(report, resolved_report_dir / "latest.md")
@@ -322,13 +343,17 @@ def _print_terminal_summary(report: AggregateReport) -> None:
     """Print readable summary table to stdout."""
     print("═" * 78)
     print(f"📊 EVALUATION SUMMARY ({report.mode.upper()})")
-    print(f"Overall Pass Rate:     {report.pass_rate:.1%} ({report.passed_cases}/{report.total_cases}) [Threshold: {report.threshold:.0%}]")
+    print(
+        f"Overall Pass Rate:     {report.pass_rate:.1%} ({report.passed_cases}/{report.total_cases}) [Threshold: {report.threshold:.0%}]"
+    )
     print(f"Retrieval Hit-Rate:    {report.retrieval_hit_rate:.1%}")
     print(f"Tool Accuracy:         {report.tool_accuracy:.1%}")
     print(f"Decline Accuracy:      {report.decline_accuracy:.1%}")
     print(f"Average Latency:       {report.avg_latency_ms:.1f}ms")
     print("─" * 78)
-    print(f"{'Category':<15} {'Cases':<8} {'Pass Rate':<12} {'Retrieval':<12} {'Tool Acc':<12} {'Avg Latency'}")
+    print(
+        f"{'Category':<15} {'Cases':<8} {'Pass Rate':<12} {'Retrieval':<12} {'Tool Acc':<12} {'Avg Latency'}"
+    )
     print("─" * 78)
     for cat_name, cat in report.by_category.items():
         print(
@@ -375,20 +400,22 @@ def _write_markdown_report(report: AggregateReport, output_file: Path) -> None:
             f"{cat.avg_retrieval_hit:.1%} | {cat.avg_tool_accuracy:.1%} | {cat.avg_latency_ms:.1f}ms |"
         )
 
-    md.extend([
-        "",
-        "## Evaluation Methodology",
-        "",
-        "1. **Retrieval Hit Rate**: Evaluates whether the retriever surfaced and cited the mandatory runbooks/documents for operational knowledge base inquiries.",
-        "2. **Tool Selection Accuracy**: Evaluates whether the ReAct agent invoked the required operational database query tools (`query_services`, `query_incidents`, `query_users`, `get_service_detail`).",
-        "3. **Point Coverage**: Deterministic keyword and entity coverage asserting that factual values (SLAs, uptime %, incident titles, recovery steps) appear in the synthesized answer.",
-        "4. **Hallucination / Decline Detection**: Asserts that out-of-scope or ungrounded queries are rejected with an explicit refusal rather than fabricating data.",
-        "",
-        "## Case-by-Case Results",
-        "",
-        "| ID | Category | Status | Retrieval | Tool Acc | Point Cov | Latency |",
-        "| :--- | :--- | :---: | :---: | :---: | :---: | :---: |",
-    ])
+    md.extend(
+        [
+            "",
+            "## Evaluation Methodology",
+            "",
+            "1. **Retrieval Hit Rate**: Evaluates whether the retriever surfaced and cited the mandatory runbooks/documents for operational knowledge base inquiries.",
+            "2. **Tool Selection Accuracy**: Evaluates whether the ReAct agent invoked the required operational database query tools (`query_services`, `query_incidents`, `query_users`, `get_service_detail`).",
+            "3. **Point Coverage**: Deterministic keyword and entity coverage asserting that factual values (SLAs, uptime %, incident titles, recovery steps) appear in the synthesized answer.",
+            "4. **Hallucination / Decline Detection**: Asserts that out-of-scope or ungrounded queries are rejected with an explicit refusal rather than fabricating data.",
+            "",
+            "## Case-by-Case Results",
+            "",
+            "| ID | Category | Status | Retrieval | Tool Acc | Point Cov | Latency |",
+            "| :--- | :--- | :---: | :---: | :---: | :---: | :---: |",
+        ]
+    )
 
     for r in report.results:
         status_tag = "✅ PASS" if r.passed else "❌ FAIL"
@@ -410,10 +437,30 @@ def _write_json_report(report: AggregateReport, output_file: Path) -> None:
 def main() -> None:
     """CLI entrypoint."""
     parser = argparse.ArgumentParser(description="OpsPilot Evaluation Harness Runner")
-    parser.add_argument("--offline", action="store_true", default=False, help="Run in deterministic offline mode without live Gemini API")
-    parser.add_argument("--category", type=str, default=None, help="Filter cases by category (kb, services, incidents, users, multi_tool, out_of_scope)")
-    parser.add_argument("--threshold", type=float, default=0.80, help="Pass rate threshold (default: 0.80)")
-    parser.add_argument("--report-dir", type=str, default=None, help="Custom output directory for reports")
+    parser.add_argument(
+        "--offline",
+        action="store_true",
+        default=False,
+        help="Run in deterministic offline mode without live Gemini API",
+    )
+    parser.add_argument(
+        "--category",
+        type=str,
+        default=None,
+        help="Filter cases by category (kb, services, incidents, users, multi_tool, out_of_scope)",
+    )
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=0.80,
+        help="Pass rate threshold (default: 0.80)",
+    )
+    parser.add_argument(
+        "--report-dir",
+        type=str,
+        default=None,
+        help="Custom output directory for reports",
+    )
 
     args = parser.parse_args()
 

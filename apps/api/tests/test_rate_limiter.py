@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
-from datetime import datetime, timezone
 import uuid
+from datetime import UTC, datetime
+
 import pytest
 from httpx import AsyncClient
 
@@ -61,21 +61,29 @@ async def test_memory_rate_store_sliding_window() -> None:
     store = MemoryRateStore()
 
     # 3 requests allowed in 2 seconds
-    allowed1, rem1, retry1 = await store.check_rate_limit("test_key", limit=3, window_seconds=2)
+    allowed1, rem1, retry1 = await store.check_rate_limit(
+        "test_key", limit=3, window_seconds=2
+    )
     assert allowed1 is True
     assert rem1 == 2
     assert retry1 == 0
 
-    allowed2, rem2, retry2 = await store.check_rate_limit("test_key", limit=3, window_seconds=2)
+    allowed2, rem2, retry2 = await store.check_rate_limit(
+        "test_key", limit=3, window_seconds=2
+    )
     assert allowed2 is True
     assert rem2 == 1
 
-    allowed3, rem3, retry3 = await store.check_rate_limit("test_key", limit=3, window_seconds=2)
+    allowed3, rem3, retry3 = await store.check_rate_limit(
+        "test_key", limit=3, window_seconds=2
+    )
     assert allowed3 is True
     assert rem3 == 0
 
     # 4th request must be rejected
-    allowed4, rem4, retry4 = await store.check_rate_limit("test_key", limit=3, window_seconds=2)
+    allowed4, rem4, retry4 = await store.check_rate_limit(
+        "test_key", limit=3, window_seconds=2
+    )
     assert allowed4 is False
     assert rem4 == 0
     assert retry4 >= 1
@@ -109,7 +117,9 @@ async def test_memory_rate_store_daily_budget() -> None:
 
 
 @pytest.mark.asyncio
-async def test_ai_endpoint_rate_limiting(client: AsyncClient, auth_token: tuple[str, User]) -> None:
+async def test_ai_endpoint_rate_limiting(
+    client: AsyncClient, auth_token: tuple[str, User]
+) -> None:
     """Test that hammering /api/v1/chat triggers HTTP 429."""
     token, _ = auth_token
     headers = {"Authorization": f"Bearer {token}"}
@@ -149,7 +159,7 @@ async def test_daily_ai_budget_blocks_without_gemini_call(
     headers = {"Authorization": f"Bearer {token}"}
     settings = get_settings()
 
-    date_key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date_key = datetime.now(UTC).strftime("%Y-%m-%d")
     store = get_rate_store()
 
     # Pre-fill daily budget to max
@@ -175,7 +185,11 @@ async def test_gemini_429_quota_handling(monkeypatch: pytest.MonkeyPatch) -> Non
 
     async def mock_post(*args: object, **kwargs: object) -> httpx.Response:
         req = httpx.Request("POST", "https://generativelanguage.googleapis.com")
-        return httpx.Response(status_code=429, request=req, text='{"error": {"message": "Resource exhausted"}}')
+        return httpx.Response(
+            status_code=429,
+            request=req,
+            text='{"error": {"message": "Resource exhausted"}}',
+        )
 
     monkeypatch.setattr(httpx.AsyncClient, "post", mock_post)
 

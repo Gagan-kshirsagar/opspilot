@@ -10,9 +10,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import uuid
-from collections.abc import AsyncGenerator
-from typing import Any, Callable
+from collections.abc import AsyncGenerator, Callable
+from typing import Any
 
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -135,13 +134,21 @@ class AgentRunner:
                 }
 
                 try:
-                    resp = await client.post(url_generate, headers=headers, json=payload)
+                    resp = await client.post(
+                        url_generate, headers=headers, json=payload
+                    )
                     if resp.status_code == 429:
-                        logger.warning("Gemini 429 Quota / Rate limit reached during agent reasoning.")
+                        logger.warning(
+                            "Gemini 429 Quota / Rate limit reached during agent reasoning."
+                        )
                         rate_limited = True
                         break
                     if resp.status_code != 200:
-                        logger.warning("Agent LLM call returned %s: %s", resp.status_code, resp.text)
+                        logger.warning(
+                            "Agent LLM call returned %s: %s",
+                            resp.status_code,
+                            resp.text,
+                        )
                         break
 
                     data = resp.json()
@@ -154,7 +161,9 @@ class AgentRunner:
                     parts = content_obj.get("parts", [])
 
                     # Check for tool / function calls
-                    function_calls = [p["functionCall"] for p in parts if "functionCall" in p]
+                    function_calls = [
+                        p["functionCall"] for p in parts if "functionCall" in p
+                    ]
 
                     if not function_calls:
                         # Model generated final text directly without tool calls
@@ -269,9 +278,13 @@ class AgentRunner:
 
                 stream_started = False
                 try:
-                    async with client.stream("POST", url_stream, headers=headers, json=stream_payload) as stream_resp:
+                    async with client.stream(
+                        "POST", url_stream, headers=headers, json=stream_payload
+                    ) as stream_resp:
                         if stream_resp.status_code == 429:
-                            logger.warning("Gemini 429 Quota exceeded during final stream synthesis.")
+                            logger.warning(
+                                "Gemini 429 Quota exceeded during final stream synthesis."
+                            )
                             rate_limited = True
                         elif stream_resp.status_code == 200:
                             async for line in stream_resp.aiter_lines():
@@ -283,14 +296,23 @@ class AgentRunner:
                                         chunk = json.loads(d_str)
                                         cands = chunk.get("candidates", [])
                                         if cands:
-                                            pts = cands[0].get("content", {}).get("parts", [])
+                                            pts = (
+                                                cands[0]
+                                                .get("content", {})
+                                                .get("parts", [])
+                                            )
                                             for p in pts:
                                                 if "text" in p and not p.get("thought"):
                                                     txt = p["text"]
                                                     if txt:
                                                         stream_started = True
-                                                        final_answer_accumulated.append(txt)
-                                                        yield {"event": "token", "data": {"text": txt}}
+                                                        final_answer_accumulated.append(
+                                                            txt
+                                                        )
+                                                        yield {
+                                                            "event": "token",
+                                                            "data": {"text": txt},
+                                                        }
                                     except json.JSONDecodeError:
                                         continue
                 except Exception as e:

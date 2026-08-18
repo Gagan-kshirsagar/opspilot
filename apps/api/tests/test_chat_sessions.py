@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+
 import pytest
 from httpx import AsyncClient
 
@@ -62,8 +63,12 @@ async def test_chat_session_lifecycle(client: AsyncClient, user_a_token: str) ->
         user_a_id = uuid.UUID(me_resp.json()["id"])
         repo = ChatRepository(session)
         s = await repo.create_session(user_a_id, title="Test Incident Discussion")
-        await repo.add_message(s.id, MessageRole.USER, "What happened with API gateway?")
-        await repo.add_message(s.id, MessageRole.ASSISTANT, "API gateway had latency spike.")
+        await repo.add_message(
+            s.id, MessageRole.USER, "What happened with API gateway?"
+        )
+        await repo.add_message(
+            s.id, MessageRole.ASSISTANT, "API gateway had latency spike."
+        )
         await session.commit()
         session_id = str(s.id)
 

@@ -28,7 +28,9 @@ class ServiceRepository:
             .select_from(Incident)
             .where(
                 Incident.service_id == service_id,
-                Incident.status.in_([IncidentStatus.OPEN, IncidentStatus.INVESTIGATING]),
+                Incident.status.in_(
+                    [IncidentStatus.OPEN, IncidentStatus.INVESTIGATING]
+                ),
             )
         )
         result = await self._session.execute(stmt)

@@ -13,6 +13,4 @@ class Team(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     __tablename__ = "teams"
 
-    name: Mapped[str] = mapped_column(
-        String(100), unique=True, nullable=False
-    )
+    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)

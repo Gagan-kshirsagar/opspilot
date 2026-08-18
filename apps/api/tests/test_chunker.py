@@ -21,7 +21,9 @@ def test_chunk_document_basic() -> None:
         "## 2. Escalation\n"
         "Page the on-call engineer immediately."
     )
-    chunks = chunk_document(text, document_title="Incident Response Runbook", target_tokens=100)
+    chunks = chunk_document(
+        text, document_title="Incident Response Runbook", target_tokens=100
+    )
 
     assert len(chunks) >= 1
     assert chunks[0].document_title == "Incident Response Runbook"

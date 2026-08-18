@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from app.models.user import User
 
 
-class IncidentSeverity(str, enum.Enum):
+class IncidentSeverity(enum.StrEnum):
     """Severity levels for incidents."""
 
     SEV1 = "sev1"
@@ -25,7 +25,7 @@ class IncidentSeverity(str, enum.Enum):
     SEV3 = "sev3"
 
 
-class IncidentStatus(str, enum.Enum):
+class IncidentStatus(enum.StrEnum):
     """Incident lifecycle status."""
 
     OPEN = "open"
@@ -67,5 +67,7 @@ class Incident(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     # Relationships
-    service: Mapped[Service] = relationship("Service", back_populates="incidents", lazy="selectin")
+    service: Mapped[Service] = relationship(
+        "Service", back_populates="incidents", lazy="selectin"
+    )
     assignee: Mapped[User | None] = relationship("User", lazy="selectin")

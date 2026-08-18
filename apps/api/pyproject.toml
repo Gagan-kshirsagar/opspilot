@@ -12,7 +12,11 @@ dependencies = [
     "pydantic[email]>=2.10,<3",
     "pydantic-settings>=2.7,<3",
     "passlib[bcrypt]>=1.7,<2",
+    "bcrypt<=4.0.1",
     "python-jose[cryptography]>=3.3,<4",
+    "cryptography>=43,<44",
+    "pgvector>=0.3.6,<1",
+    "pyyaml>=6.0,<7",
 ]
 
 [project.optional-dependencies]
@@ -39,6 +43,7 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501", "B008"]
 
 [tool.mypy]
 python_version = "3.11"

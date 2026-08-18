@@ -5,7 +5,6 @@ All tools call existing repositories and retriever. No direct raw SQL.
 
 from __future__ import annotations
 
-import json
 import logging
 import uuid
 from typing import Any
@@ -348,7 +347,10 @@ async def execute_get_service_detail(
         # Search by name
         results = await repo.list_services(search=name_or_id)
         for s in results:
-            if s.name.lower() == name_or_id.lower() or name_or_id.lower() in s.name.lower():
+            if (
+                s.name.lower() == name_or_id.lower()
+                or name_or_id.lower() in s.name.lower()
+            ):
                 service = s
                 break
 

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 
-class UserRole(str, enum.Enum):
+class UserRole(enum.StrEnum):
     """Roles supported by the system."""
 
     ADMIN = "admin"
@@ -21,7 +21,7 @@ class UserRole(str, enum.Enum):
     GUEST = "guest"
 
 
-class UserStatus(str, enum.Enum):
+class UserStatus(enum.StrEnum):
     """Account status."""
 
     ACTIVE = "active"
@@ -48,12 +48,8 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         nullable=False,
         default=UserStatus.ACTIVE,
     )
-    password_hash: Mapped[str | None] = mapped_column(
-        String(255), nullable=True
-    )
-    is_guest: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_guest: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     team_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("teams.id", ondelete="SET NULL"),
         nullable=True,

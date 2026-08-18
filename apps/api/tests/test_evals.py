@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-import uuid
+
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.evals.dataset import load_eval_cases
 from app.evals.models import EvalCase, EvalCategory
@@ -18,10 +17,6 @@ from app.evals.scorer import (
     detect_decline,
     score_case,
 )
-from app.models.document import Document, DocumentChunk, DocumentKind
-from app.models.incident import Incident, IncidentSeverity, IncidentStatus
-from app.models.service import Service, ServiceStatus
-from app.models.user import User, UserRole, UserStatus
 from app.rag.embeddings import EmbeddingsProvider, set_embeddings_provider
 from tests.conftest import _session_factory
 
@@ -49,16 +44,25 @@ def test_retrieval_hit_calculation() -> None:
     must_cite = ["Payment Gateway Fallback", "Database Backup Runbook"]
 
     # Perfect recall (exact or substring)
-    assert calculate_retrieval_hit(
-        ["Payment Processing Gateway Fallback and Retry Policy", "Database Backup Runbook"],
-        must_cite,
-    ) == 1.0
+    assert (
+        calculate_retrieval_hit(
+            [
+                "Payment Processing Gateway Fallback and Retry Policy",
+                "Database Backup Runbook",
+            ],
+            must_cite,
+        )
+        == 1.0
+    )
 
     # 50% recall
-    assert calculate_retrieval_hit(
-        ["Payment Processing Gateway Fallback and Retry Policy"],
-        must_cite,
-    ) == 0.5
+    assert (
+        calculate_retrieval_hit(
+            ["Payment Processing Gateway Fallback and Retry Policy"],
+            must_cite,
+        )
+        == 0.5
+    )
 
     # 0% recall
     assert calculate_retrieval_hit(["Elasticsearch Cluster Recovery"], must_cite) == 0.0
@@ -72,8 +76,15 @@ def test_tool_selection_calculation() -> None:
     expected = ["query_services", "retrieve_docs"]
 
     # Perfect match
-    assert calculate_tool_selection(["query_services", "retrieve_docs"], expected) == 1.0
-    assert calculate_tool_selection(["query_services", "retrieve_docs", "get_service_detail"], expected) == 1.0
+    assert (
+        calculate_tool_selection(["query_services", "retrieve_docs"], expected) == 1.0
+    )
+    assert (
+        calculate_tool_selection(
+            ["query_services", "retrieve_docs", "get_service_detail"], expected
+        )
+        == 1.0
+    )
 
     # Partial match
     assert calculate_tool_selection(["query_services"], expected) == 0.5
@@ -93,7 +104,9 @@ def test_point_coverage_calculation() -> None:
     answer_full = "The circuit breaker opens when error rate exceeds 10% or latency exceeds 4,000ms, routing to the secondary gateway."
     assert calculate_point_coverage(answer_full, expected) == 1.0
 
-    answer_partial = "The error rate threshold is 10% and it switches to the secondary gateway."
+    answer_partial = (
+        "The error rate threshold is 10% and it switches to the secondary gateway."
+    )
     assert calculate_point_coverage(answer_partial, expected) == 0.5
 
     answer_none = "I have no information regarding payment gateways."
@@ -105,10 +118,14 @@ def test_point_coverage_calculation() -> None:
 
 def test_decline_detection() -> None:
     """Test decline detection for out-of-scope safety guardrails."""
-    assert detect_decline("I don't have enough information in the system or knowledge base to answer that.")
+    assert detect_decline(
+        "I don't have enough information in the system or knowledge base to answer that."
+    )
     assert detect_decline("This query is out of scope.")
     assert detect_decline("I am unable to answer this question.")
-    assert not detect_decline("The payment service is currently healthy with 99.9% uptime.")
+    assert not detect_decline(
+        "The payment service is currently healthy with 99.9% uptime."
+    )
 
 
 def test_score_case_kb_pass_and_fail() -> None:
