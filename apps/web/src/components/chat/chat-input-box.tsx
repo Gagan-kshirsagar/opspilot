@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, Clock, Info, RotateCcw, Send, Sparkles, Square } from "lucide-react";
+import { AlertCircle, Clock, RotateCcw, Send, Sparkles, Square } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import type { LimitInfo } from "@/hooks/useChatStream";
@@ -28,25 +28,25 @@ export function ChatInputBox({
   limitInfo,
 }: ChatInputBoxProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const [countdown, setCountdown] = useState(0);
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(0);
 
   useEffect(() => {
-    if (limitInfo?.type === "rate_limit" && limitInfo.retryAfter > 0) {
-      setCountdown(limitInfo.retryAfter);
-    } else {
-      setCountdown(0);
+    if (!limitInfo || limitInfo.type !== "rate_limit" || limitInfo.retryAfter <= 0) {
+      return;
     }
+    const target = Date.now() + limitInfo.retryAfter * 1000;
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((target - Date.now()) / 1000));
+      setSecondsRemaining(remaining);
+      if (remaining <= 0) {
+        clearInterval(interval);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
   }, [limitInfo]);
 
-  useEffect(() => {
-    if (countdown <= 0) return;
-    const timer = setInterval(() => {
-      setCountdown((prev) => (prev <= 1 ? 0 : prev - 1));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [countdown]);
-
-  const isRateLimited = countdown > 0;
+  const isRateLimited = (limitInfo?.type === "rate_limit" && (secondsRemaining > 0 || limitInfo.retryAfter > 0));
+  const countdown = secondsRemaining > 0 ? secondsRemaining : (limitInfo?.type === "rate_limit" ? limitInfo.retryAfter : 0);
   const isDailyLimited = limitInfo?.type === "daily_limit";
 
   useEffect(() => {

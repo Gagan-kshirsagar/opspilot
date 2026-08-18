@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { DeleteUserDialog } from "@/components/users/delete-user-dialog";
 import { UserFormDialog } from "@/components/users/user-form-dialog";
@@ -46,10 +46,22 @@ export default function UsersPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserRow | null>(null);
 
-  // Reset to page 1 when filters or search change
-  useEffect(() => {
+  const handleSearchChange = (val: string) => {
+    setSearchInput(val);
     setPage(1);
-  }, [debouncedSearch, roleFilter, statusFilter, teamFilter]);
+  };
+  const handleRoleChange = (val: UserRole | "") => {
+    setRoleFilter(val);
+    setPage(1);
+  };
+  const handleStatusChange = (val: UserStatus | "") => {
+    setStatusFilter(val);
+    setPage(1);
+  };
+  const handleTeamChange = (val: string) => {
+    setTeamFilter(val);
+    setPage(1);
+  };
 
   // Construct query params
   const queryParams: UserListParams = {
@@ -114,13 +126,13 @@ export default function UsersPage() {
       {/* Toolbar (Search, Filter, Actions) */}
       <UsersToolbar
         search={searchInput}
-        onSearchChange={setSearchInput}
+        onSearchChange={handleSearchChange}
         roleFilter={roleFilter}
-        onRoleFilterChange={setRoleFilter}
+        onRoleFilterChange={handleRoleChange}
         statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
+        onStatusFilterChange={handleStatusChange}
         teamFilter={teamFilter}
-        onTeamFilterChange={setTeamFilter}
+        onTeamFilterChange={handleTeamChange}
         onResetFilters={handleResetFilters}
         hasActiveFilters={hasActiveFilters}
         canMutate={canMutate}

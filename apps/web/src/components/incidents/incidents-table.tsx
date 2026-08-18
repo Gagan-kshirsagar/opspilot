@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
   type ColumnDef,
   flexRender,
@@ -135,24 +135,30 @@ export function IncidentsTable({
   const canResolve =
     currentUser?.role === "admin" || currentUser?.role === "manager";
 
-  const handleHeaderSort = (field: IncidentSortByField) => {
-    if (sortBy === field) {
-      onSortChange(field, sortDir === "asc" ? "desc" : "asc");
-    } else {
-      onSortChange(field, "asc");
-    }
-  };
+  const handleHeaderSort = useCallback(
+    (field: IncidentSortByField) => {
+      if (sortBy === field) {
+        onSortChange(field, sortDir === "asc" ? "desc" : "asc");
+      } else {
+        onSortChange(field, "asc");
+      }
+    },
+    [sortBy, sortDir, onSortChange]
+  );
 
-  const renderSortIcon = (field: IncidentSortByField) => {
-    if (sortBy !== field) {
-      return <ArrowUpDown className="size-3 text-faint" />;
-    }
-    return sortDir === "asc" ? (
-      <ArrowUp className="size-3 text-accent" />
-    ) : (
-      <ArrowDown className="size-3 text-accent" />
-    );
-  };
+  const renderSortIcon = useCallback(
+    (field: IncidentSortByField) => {
+      if (sortBy !== field) {
+        return <ArrowUpDown className="size-3 text-faint" />;
+      }
+      return sortDir === "asc" ? (
+        <ArrowUp className="size-3 text-accent" />
+      ) : (
+        <ArrowDown className="size-3 text-accent" />
+      );
+    },
+    [sortBy, sortDir]
+  );
 
   const columns = useMemo<ColumnDef<IncidentItem>[]>(
     () => [
@@ -287,7 +293,7 @@ export function IncidentsTable({
         },
       },
     ],
-    [sortBy, sortDir, canResolve]
+    [canResolve, handleHeaderSort, renderSortIcon, onSelectIncident]
   );
 
   const table = useReactTable({

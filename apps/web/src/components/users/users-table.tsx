@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import {
   type ColumnDef,
   flexRender,
@@ -21,7 +21,6 @@ import {
   Users,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -177,7 +176,7 @@ export function UsersTable({
   const isSomeSelected =
     data.some((u) => selectedIds.includes(u.id)) && !isAllSelected;
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     if (isAllSelected) {
       onSelectionChange(
         selectedIds.filter((id) => !data.some((u) => u.id === id))
@@ -186,34 +185,43 @@ export function UsersTable({
       const newIds = new Set([...selectedIds, ...data.map((u) => u.id)]);
       onSelectionChange(Array.from(newIds));
     }
-  };
+  }, [isAllSelected, data, selectedIds, onSelectionChange]);
 
-  const handleToggleRow = (id: string) => {
-    if (selectedIds.includes(id)) {
-      onSelectionChange(selectedIds.filter((i) => i !== id));
-    } else {
-      onSelectionChange([...selectedIds, id]);
-    }
-  };
+  const handleToggleRow = useCallback(
+    (id: string) => {
+      if (selectedIds.includes(id)) {
+        onSelectionChange(selectedIds.filter((i) => i !== id));
+      } else {
+        onSelectionChange([...selectedIds, id]);
+      }
+    },
+    [selectedIds, onSelectionChange]
+  );
 
-  const handleHeaderSort = (field: SortByField) => {
-    if (sortBy === field) {
-      onSortChange(field, sortDir === "asc" ? "desc" : "asc");
-    } else {
-      onSortChange(field, "asc");
-    }
-  };
+  const handleHeaderSort = useCallback(
+    (field: SortByField) => {
+      if (sortBy === field) {
+        onSortChange(field, sortDir === "asc" ? "desc" : "asc");
+      } else {
+        onSortChange(field, "asc");
+      }
+    },
+    [sortBy, sortDir, onSortChange]
+  );
 
-  const renderSortIcon = (field: SortByField) => {
-    if (sortBy !== field) {
-      return <ArrowUpDown className="size-3 text-faint" />;
-    }
-    return sortDir === "asc" ? (
-      <ArrowUp className="size-3 text-accent" />
-    ) : (
-      <ArrowDown className="size-3 text-accent" />
-    );
-  };
+  const renderSortIcon = useCallback(
+    (field: SortByField) => {
+      if (sortBy !== field) {
+        return <ArrowUpDown className="size-3 text-faint" />;
+      }
+      return sortDir === "asc" ? (
+        <ArrowUp className="size-3 text-accent" />
+      ) : (
+        <ArrowDown className="size-3 text-accent" />
+      );
+    },
+    [sortBy, sortDir]
+  );
 
   const columns = useMemo<ColumnDef<UserRow>[]>(
     () => [
@@ -390,15 +398,18 @@ export function UsersTable({
       },
     ],
     [
-      data,
       selectedIds,
       isAllSelected,
       isSomeSelected,
-      sortBy,
-      sortDir,
       canMutate,
       isAdmin,
       currentUser,
+      onDeleteUser,
+      onEditUser,
+      handleHeaderSort,
+      handleSelectAll,
+      handleToggleRow,
+      renderSortIcon,
     ]
   );
 
