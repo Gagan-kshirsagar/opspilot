@@ -41,11 +41,22 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
     GEMINI_CHAT_MODEL: str = "gemini-3.1-flash-lite"
-    RAG_TOP_K: int = 5
+    GEMINI_MAX_OUTPUT_TOKENS: int = 1024
+    RAG_TOP_K: int = 4
     RAG_SIMILARITY_THRESHOLD: float = 0.55
     RAG_TEMPERATURE: float = 0.2
-    AGENT_MAX_ITERS: int = 5
+    AGENT_MAX_ITERS: int = 4
     AGENT_TEMPERATURE: float = 0.2
+
+    # ── Rate Limiting & Daily AI Budget ───────────────────
+    REDIS_URL: str | None = None
+    UPSTASH_REDIS_REST_URL: str | None = None
+    UPSTASH_REDIS_REST_TOKEN: str | None = None
+    AI_RATE_LIMIT_REQUESTS: int = 10
+    AI_RATE_LIMIT_WINDOW_SECONDS: int = 600
+    API_RATE_LIMIT_REQUESTS: int = 60
+    API_RATE_LIMIT_WINDOW_SECONDS: int = 60
+    DAILY_AI_LIMIT: int = 500
 
 
 def get_settings() -> Settings:

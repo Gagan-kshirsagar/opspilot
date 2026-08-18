@@ -10,6 +10,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
+from app.core.rate_limit import require_ai_rate_limit
 from app.db.engine import get_session
 from app.models.user import User
 from app.schemas.auth import ErrorResponse
@@ -33,12 +34,14 @@ _service = ChatService()
     responses={
         401: {"model": ErrorResponse},
         422: {"description": "Validation error on request body"},
+        429: {"model": ErrorResponse, "description": "Rate limit exceeded"},
     },
 )
 async def ask_chat(
     body: ChatRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
     _user: Annotated[User, Depends(get_current_user)],
+    _rate_limit: Annotated[str, Depends(require_ai_rate_limit)],
 ) -> ChatResponse:
     """Ask a question grounded in the OpsPilot knowledge base (non-streaming)."""
     return await _service.answer_question(body, session)
@@ -50,12 +53,14 @@ async def ask_chat(
     responses={
         401: {"model": ErrorResponse},
         422: {"description": "Validation error on request body"},
+        429: {"model": ErrorResponse, "description": "Rate limit exceeded"},
     },
 )
 async def ask_chat_stream(
     body: ChatStreamRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
     user: Annotated[User, Depends(get_current_user)],
+    _rate_limit: Annotated[str, Depends(require_ai_rate_limit)],
 ) -> StreamingResponse:
     """Stream grounded answer token-by-token via Server-Sent Events (SSE)."""
     generator = _service.stream_chat(request=body, user_id=user.id, session=session)

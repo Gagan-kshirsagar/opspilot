@@ -72,6 +72,27 @@ async def get_current_user(
     return user
 
 
+async def get_current_user_optional(
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
+    ],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    provider: Annotated[AuthProvider, Depends(_get_provider)],
+) -> User | None:
+    """Extract user if valid token present, else return None."""
+    if credentials is None:
+        return None
+
+    try:
+        claims = provider.verify_token(credentials.credentials)
+        if claims.type != "access":
+            return None
+        repo = UserRepository(session)
+        return await repo.get_by_id(uuid.UUID(claims.sub))
+    except Exception:
+        return None
+
+
 def require_role(
     *allowed_roles: str,
 ) -> Callable[..., Coroutine[Any, Any, User]]:

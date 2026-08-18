@@ -13,6 +13,12 @@ Format:
 **Rejected:** <the alternative and why not>
 ```
 
+## 2026-08-18 — Cost/abuse protection: RateStore, daily AI budget, and quota-resilient UX
+
+**Decision:** Implemented a pluggable `RateStore` protocol (`MemoryRateStore` for offline/CI + `UpstashRedisRateStore` for production), per-IP/user rate limiting on chat endpoints (10 msgs/10 mins), a global daily AI request budget (500/day UTC reset) that short-circuits before LLM invocation, tight token caps (`maxOutputTokens=1024`, `top_k=4`, `max_iters=4`), and graceful handling for Gemini 429 quota exhaustion.
+**Why:** Guarantees that public deployment on free tiers (Vercel, Render, Gemini API) cannot incur bills or crash on quota exhaustion, while giving visitors clear countdown timers and friendly explanations instead of HTTP 500 errors.
+**Rejected:** External-only Redis dependency (would break offline CI and local development), unbuffered daily tracking (allows quota burnout in hours), silent 500 crashes on Gemini quota limits.
+
 ## 2026-08-18 — RAG & Agent evaluation harness with deterministic offline CI gate
 
 **Decision:** Built a 28-case golden dataset with a multi-metric scorer measuring citation recall (`must_cite`), tool selection accuracy (`expected_tools`), deterministic factual point coverage (`expected_points`), decline/hallucination detection on out-of-scope queries, and an offline runner gating CI builds (`--offline --threshold 0.80`).

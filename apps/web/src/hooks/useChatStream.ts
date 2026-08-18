@@ -15,6 +15,12 @@ import type {
   StreamTokenPayload,
 } from "@/types/chat";
 
+export interface LimitInfo {
+  type: "rate_limit" | "daily_limit" | "quota_busy";
+  retryAfter: number;
+  message: string;
+}
+
 interface UseChatStreamOptions {
   onDone?: (sessionId: string) => void;
   onError?: (error: string) => void;
@@ -28,6 +34,7 @@ export function useChatStream(options?: UseChatStreamOptions) {
   const [streamingCitations, setStreamingCitations] = useState<Citation[] | null>(null);
   const [streamingUsedContext, setStreamingUsedContext] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [limitInfo, setLimitInfo] = useState<LimitInfo | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const queryClient = useQueryClient();
@@ -57,6 +64,7 @@ export function useChatStream(options?: UseChatStreamOptions) {
     setStreamingCitations(null);
     setStreamingUsedContext(null);
     setError(null);
+    setLimitInfo(null);
   }, [stop]);
 
   const sendMessage = useCallback(
@@ -74,6 +82,7 @@ export function useChatStream(options?: UseChatStreamOptions) {
 
       setIsStreaming(true);
       setError(null);
+      setLimitInfo(null);
       setStreamingUserMessage(trimmed);
       setStreamingSteps([]);
       setStreamingContent("");
@@ -115,6 +124,20 @@ export function useChatStream(options?: UseChatStreamOptions) {
           } catch {
             // Ignore non-json error body
           }
+
+          if (response.status === 429) {
+            const retryHeader = response.headers.get("Retry-After");
+            const retrySec = retryHeader ? parseInt(retryHeader, 10) : 60;
+            setLimitInfo({
+              type: "rate_limit",
+              retryAfter: isNaN(retrySec) ? 60 : retrySec,
+              message: errorMsg,
+            });
+            setError(errorMsg);
+            setIsStreaming(false);
+            return;
+          }
+
           throw new Error(errorMsg);
         }
 
@@ -159,6 +182,19 @@ export function useChatStream(options?: UseChatStreamOptions) {
                 const tokenData = parsed as StreamTokenPayload;
                 if (tokenData.text) {
                   setStreamingContent((prev) => prev + tokenData.text);
+                  if (tokenData.text.toLowerCase().includes("daily demo limit")) {
+                    setLimitInfo({
+                      type: "daily_limit",
+                      retryAfter: 0,
+                      message: tokenData.text,
+                    });
+                  } else if (tokenData.text.toLowerCase().includes("experiencing high demand")) {
+                    setLimitInfo({
+                      type: "quota_busy",
+                      retryAfter: 15,
+                      message: tokenData.text,
+                    });
+                  }
                 }
               } else if (eventType === "citations") {
                 const citationsData = parsed as StreamCitationsPayload;
@@ -224,6 +260,7 @@ export function useChatStream(options?: UseChatStreamOptions) {
     streamingCitations,
     streamingUsedContext,
     error,
+    limitInfo,
     sendMessage,
     stop,
     reset,

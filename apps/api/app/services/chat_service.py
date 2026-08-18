@@ -9,7 +9,10 @@ from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from datetime import datetime, timezone
+
 from app.core.config import get_settings
+from app.core.rate_store import get_rate_store
 from app.models.chat import MessageRole
 from app.rag.llm import get_llm_provider
 from app.rag.prompt import DECLINE_MESSAGE, format_rag_prompt
@@ -40,6 +43,23 @@ class ChatService:
     ) -> ChatResponse:
         """Answer question using non-streaming knowledge base retrieval."""
         question = request.question.strip()
+
+        # 0. Check global daily AI request budget
+        date_key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        rate_store = get_rate_store()
+        allowed, _, _ = await rate_store.increment_daily_budget(
+            date_key=date_key, max_budget=self.settings.DAILY_AI_LIMIT
+        )
+        if not allowed:
+            return ChatResponse(
+                answer=(
+                    f"The daily demo limit of {self.settings.DAILY_AI_LIMIT} AI requests has been reached. "
+                    "To protect free-tier quotas, AI queries will reset at midnight UTC (00:00 UTC). "
+                    "Please try again tomorrow!"
+                ),
+                citations=[],
+                used_context=False,
+            )
 
         # 1. Retrieve top-k relevant chunks
         chunks = await self.retriever.retrieve(question, session)
@@ -127,6 +147,36 @@ class ChatService:
             content=question,
         )
         await session.commit()
+
+        # 4. Check global daily AI request budget
+        date_key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        rate_store = get_rate_store()
+        allowed, _, _ = await rate_store.increment_daily_budget(
+            date_key=date_key, max_budget=self.settings.DAILY_AI_LIMIT
+        )
+        if not allowed:
+            limit_msg = (
+                f"The daily demo limit of {self.settings.DAILY_AI_LIMIT} AI requests has been reached. "
+                "To protect free-tier quotas, AI queries will reset at midnight UTC (00:00 UTC). "
+                "Please try again tomorrow!"
+            )
+            yield f"event: token\ndata: {json.dumps({'text': limit_msg})}\n\n"
+            assistant_msg = await repo.add_message(
+                session_id=chat_session.id,
+                role=MessageRole.ASSISTANT,
+                content=limit_msg,
+                citations=None,
+            )
+            await session.commit()
+            done_data = json.dumps(
+                {
+                    "session_id": str(chat_session.id),
+                    "message_id": str(assistant_msg.id),
+                    "title": chat_session.title,
+                }
+            )
+            yield f"event: done\ndata: {done_data}\n\n"
+            return
 
         # 4. Execute LangGraph ReAct Agent Runner
         from app.agent.graph import AgentRunner

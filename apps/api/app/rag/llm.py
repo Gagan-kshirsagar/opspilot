@@ -77,7 +77,7 @@ class GeminiLLMProvider:
             ],
             "generationConfig": {
                 "temperature": self.temperature,
-                "maxOutputTokens": 2048,
+                "maxOutputTokens": get_settings().GEMINI_MAX_OUTPUT_TOKENS,
                 "thinkingConfig": {"thinkingBudget": 0},
             },
         }
@@ -85,6 +85,8 @@ class GeminiLLMProvider:
         fallback_models = [self.model_name, "gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "gemini-3.6-flash"]
         # Deduplicate while preserving order
         candidate_models = list(dict.fromkeys(fallback_models))
+
+        rate_limit_hit = False
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             last_err: Exception | None = None
@@ -107,7 +109,12 @@ class GeminiLLMProvider:
                             result_text = "".join(text_parts).strip()
                             return result_text or DECLINE_MESSAGE
 
-                        if resp.status_code in (429, 500, 503):
+                        if resp.status_code == 429:
+                            rate_limit_hit = True
+                            await asyncio.sleep(0.5 * (attempt + 1))
+                            continue
+
+                        if resp.status_code in (500, 503):
                             await asyncio.sleep(0.5 * (attempt + 1))
                             continue
 
@@ -117,6 +124,9 @@ class GeminiLLMProvider:
                         last_err = e
                         await asyncio.sleep(0.5 * (attempt + 1))
                         continue
+
+            if rate_limit_hit:
+                return "OpsPilot AI is currently experiencing high demand on the free-tier quota. Please wait a few moments and try asking again."
 
             if last_err:
                 logger.error("LLM generateContent failed after retries: %s", last_err)

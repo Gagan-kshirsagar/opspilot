@@ -23,6 +23,7 @@ export function AskPanel() {
     streamingCitations,
     streamingUsedContext,
     error,
+    limitInfo,
     sendMessage,
     stop,
     reset,
@@ -127,6 +128,7 @@ export function AskPanel() {
           onRetry={handleRetry}
           isStreaming={isStreaming}
           error={error}
+          limitInfo={limitInfo}
         />
       </main>
     </div>

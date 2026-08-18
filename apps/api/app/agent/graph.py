@@ -115,6 +115,8 @@ class AgentRunner:
         iteration = 0
         final_answer_accumulated: list[str] = []
 
+        rate_limited = False
+
         async with httpx.AsyncClient(timeout=45.0) as client:
             while iteration < self.max_iterations:
                 iteration += 1
@@ -127,12 +129,17 @@ class AgentRunner:
                     "tools": [{"function_declarations": TOOL_DEFINITIONS}],
                     "generationConfig": {
                         "temperature": self.temperature,
+                        "maxOutputTokens": self.settings.GEMINI_MAX_OUTPUT_TOKENS,
                         "thinkingConfig": {"thinkingBudget": 0},
                     },
                 }
 
                 try:
                     resp = await client.post(url_generate, headers=headers, json=payload)
+                    if resp.status_code == 429:
+                        logger.warning("Gemini 429 Quota / Rate limit reached during agent reasoning.")
+                        rate_limited = True
+                        break
                     if resp.status_code != 200:
                         logger.warning("Agent LLM call returned %s: %s", resp.status_code, resp.text)
                         break
@@ -232,8 +239,12 @@ class AgentRunner:
                     },
                 }
 
-            # If we already have final answer text from non-streaming return, stream tokens
-            if final_answer_accumulated:
+            if rate_limited:
+                busy_text = "OpsPilot AI is currently experiencing high demand on the free-tier quota. Please wait a few moments and try asking again."
+                final_answer_accumulated.append(busy_text)
+                yield {"event": "token", "data": {"text": busy_text}}
+            elif final_answer_accumulated:
+                # If we already have final answer text from non-streaming return, stream tokens
                 full_text = "".join(final_answer_accumulated)
                 # Stream out chunked tokens
                 words = full_text.split(" ")
@@ -251,6 +262,7 @@ class AgentRunner:
                     "contents": contents,
                     "generationConfig": {
                         "temperature": self.temperature,
+                        "maxOutputTokens": self.settings.GEMINI_MAX_OUTPUT_TOKENS,
                         "thinkingConfig": {"thinkingBudget": 0},
                     },
                 }
@@ -258,7 +270,10 @@ class AgentRunner:
                 stream_started = False
                 try:
                     async with client.stream("POST", url_stream, headers=headers, json=stream_payload) as stream_resp:
-                        if stream_resp.status_code == 200:
+                        if stream_resp.status_code == 429:
+                            logger.warning("Gemini 429 Quota exceeded during final stream synthesis.")
+                            rate_limited = True
+                        elif stream_resp.status_code == 200:
                             async for line in stream_resp.aiter_lines():
                                 if line.startswith("data: "):
                                     d_str = line[6:].strip()
@@ -282,7 +297,10 @@ class AgentRunner:
                     logger.warning("Final stream error: %s", e)
 
                 if not stream_started:
-                    fallback_text = "I don't have enough information in the system or knowledge base to answer that."
+                    if rate_limited:
+                        fallback_text = "OpsPilot AI is currently experiencing high demand on the free-tier quota. Please wait a few moments and try asking again."
+                    else:
+                        fallback_text = "I don't have enough information in the system or knowledge base to answer that."
                     final_answer_accumulated.append(fallback_text)
                     yield {"event": "token", "data": {"text": fallback_text}}
 
