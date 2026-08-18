@@ -38,6 +38,7 @@ jobs:
 
     env:
       # Tests read config from these; namespaced OPSPILOT_ per our convention.
+      PYTHONPATH: .
       OPSPILOT_ENVIRONMENT: local
       OPSPILOT_SECRET_KEY: ci-test-secret
       OPSPILOT_DATABASE_URL: postgresql+asyncpg://opspilot:opspilot@localhost:5432/opspilot_test
