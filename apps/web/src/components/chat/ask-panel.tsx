@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Bot, MessageSquarePlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,10 @@ import { useChatStream } from "@/hooks/useChatStream";
 import { useChatSessionDetail } from "@/lib/query/chat";
 
 export function AskPanel() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams ? searchParams.get("q") : null;
+  const hasAutoSentRef = useRef(false);
+
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [lastSentQuestion, setLastSentQuestion] = useState("");
@@ -36,14 +41,24 @@ export function AskPanel() {
   const { data: sessionDetail, isLoading: isLoadingSession } =
     useChatSessionDetail(activeSessionId);
 
-  const handleSend = (textToSend: string) => {
-    const q = textToSend.trim();
-    if (!q) return;
+  const handleSend = useCallback(
+    (textToSend: string) => {
+      const q = textToSend.trim();
+      if (!q) return;
 
-    setLastSentQuestion(q);
-    setInput("");
-    sendMessage(q, activeSessionId);
-  };
+      setLastSentQuestion(q);
+      setInput("");
+      sendMessage(q, activeSessionId);
+    },
+    [activeSessionId, sendMessage]
+  );
+
+  useEffect(() => {
+    if (initialQuery && !hasAutoSentRef.current && !activeSessionId) {
+      hasAutoSentRef.current = true;
+      handleSend(initialQuery);
+    }
+  }, [initialQuery, activeSessionId, handleSend]);
 
   const handleNewChat = () => {
     reset();

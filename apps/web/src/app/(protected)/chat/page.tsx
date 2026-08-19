@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { Bot } from "lucide-react";
 
 import { AskPanel } from "@/components/chat/ask-panel";
@@ -23,7 +24,9 @@ export default function ChatPage() {
       </div>
 
       {/* Main Q&A Panel */}
-      <AskPanel />
+      <Suspense fallback={<div className="h-[600px] animate-pulse rounded-xl border border-subtle bg-surface/50" />}>
+        <AskPanel />
+      </Suspense>
     </div>
   );
 }
