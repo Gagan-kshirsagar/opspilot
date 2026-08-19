@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Literal
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,6 +24,21 @@ class Settings(BaseSettings):
 
     # ── Database ──────────────────────────────────────────
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/opspilot"
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        if isinstance(v, str):
+            v = v.strip()
+            if v.startswith("postgres://"):
+                v = "postgresql+asyncpg://" + v[len("postgres://") :]
+            elif v.startswith("postgresql://"):
+                v = "postgresql+asyncpg://" + v[len("postgresql://") :]
+            if "sslmode=" in v:
+                v = v.replace("sslmode=require", "ssl=require").replace(
+                    "sslmode=", "ssl="
+                )
+        return v
 
     # ── Auth / JWT ────────────────────────────────────────
     JWT_SECRET: str = "change-me-in-production"
