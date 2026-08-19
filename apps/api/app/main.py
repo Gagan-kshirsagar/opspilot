@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from app.api.auth import router as auth_router
 from app.api.chat import router as chat_router
@@ -15,6 +16,13 @@ from app.api.services import router as services_router
 from app.api.teams import router as teams_router
 from app.api.users import router as users_router
 from app.core.config import get_settings
+
+
+class HealthOut(BaseModel):
+    """Health check response payload."""
+
+    status: str = "ok"
+    service: str = "opspilot-api"
 
 
 @asynccontextmanager
@@ -46,6 +54,23 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # ── Health checks (Render, AWS, and uptime probes) ──
+    @app.get(
+        "/health",
+        response_model=HealthOut,
+        tags=["Health"],
+        summary="Health check probe",
+    )
+    @app.get(
+        "/",
+        response_model=HealthOut,
+        tags=["Health"],
+        summary="Root status probe",
+    )
+    @app.head("/", tags=["Health"], summary="Root HEAD probe")
+    async def health_check() -> HealthOut:
+        return HealthOut()
 
     # ── Routers ───────────────────────────────────────
     app.include_router(auth_router)
