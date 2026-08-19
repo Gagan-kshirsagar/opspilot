@@ -780,6 +780,7 @@ dependencies = [
     { name = "bcrypt" },
     { name = "cryptography" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "passlib", extra = ["bcrypt"] },
     { name = "pgvector" },
     { name = "pydantic", extra = ["email"] },
@@ -793,7 +794,6 @@ dependencies = [
 [package.optional-dependencies]
 dev = [
     { name = "aiosqlite" },
-    { name = "httpx" },
     { name = "mypy" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -808,7 +808,7 @@ requires-dist = [
     { name = "bcrypt", specifier = "<=4.0.1" },
     { name = "cryptography", specifier = ">=43,<44" },
     { name = "fastapi", specifier = ">=0.115,<1" },
-    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28,<1" },
+    { name = "httpx", specifier = ">=0.28,<1" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.13,<2" },
     { name = "passlib", extras = ["bcrypt"], specifier = ">=1.7,<2" },
     { name = "pgvector", specifier = ">=0.3.6,<1" },
