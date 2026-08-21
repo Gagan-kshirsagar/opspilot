@@ -1,333 +1,232 @@
-# OpsPilot — Step-by-Step Repo Setup (zero → green CI)
+<div align="center">
 
-Follow these in order. By the end you'll have a monorepo with both apps
-scaffolded, standards in place, and CI green — the right foundation before
-Antigravity builds features.
+<!-- Optional: replace with your logo. A simple wordmark works great. -->
+<h1>OpsPilot</h1>
 
-Assumes: Node 20+, Python 3.12+, Git, a GitHub account. Commands are for
-macOS/Linux; on Windows use Git Bash or WSL.
+### Operations, on autopilot — an open-source, AI-powered operations platform.
+
+A production-grade full-stack app with a **tool-using LangGraph agent** that answers
+questions about your operations from a knowledge base **and** live data — grounded,
+cited, and streamed in real time.
+
+<!-- Replace the URLs/badges below with your real ones -->
+[**🔴 Live Demo**](https://your-opspilot.vercel.app) &nbsp;·&nbsp;
+[**📺 Demo Video**](https://your-demo-video-link) &nbsp;·&nbsp;
+[**🏗️ Architecture**](#-architecture)
+
+![Web CI](https://github.com/Gagan-kshirsagar/opspilot/actions/workflows/web-ci.yml/badge.svg)
+![API CI](https://github.com/Gagan-kshirsagar/opspilot/actions/workflows/api-ci.yml/badge.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![Next.js](https://img.shields.io/badge/Next.js-15-black)
+![FastAPI](https://img.shields.io/badge/FastAPI-async-009688)
+![Gemini](https://img.shields.io/badge/LLM-Gemini-4285F4)
+
+<br/>
+
+<!-- Replace with a real hero screenshot or GIF of the agent answering a question -->
+<img src="docs/hero.png" alt="OpsPilot dashboard and Ask OpsPilot agent" width="90%"/>
+
+<sub>Try it: sign in with <b>“Continue as demo guest”</b> — no signup needed.</sub>
+
+</div>
 
 ---
 
-## Step 0 — Prerequisites (verify once)
+## ✨ Highlights
 
-```bash
-node -v      # v20 or higher
-python --version   # 3.12+
-git --version
-# install uv (fast Python package manager) if you don't have it:
-curl -LsSf https://astral.sh/uv/install.sh | sh
+- 🤖 **Agentic AI, not just a chatbot.** A LangGraph ReAct agent decides which tools to call —
+  searching runbooks (RAG) *and* querying live services/incidents/users — then synthesizes a
+  grounded, cited answer.
+- 📚 **Grounded RAG with citations.** Answers come from an indexed knowledge base (pgvector);
+  every claim links its source. Out-of-scope questions are **declined**, not hallucinated.
+- ⚡ **Real-time streaming.** Responses stream token-by-token over Server-Sent Events, with a
+  visible “thinking” trail of the tools the agent used.
+- 🧪 **Measured, not vibe-checked.** An eval harness scores retrieval hit-rate, tool selection,
+  answer coverage, and hallucination rate — gated in CI.
+- 🔐 **Provider-pluggable auth.** JWT today, Firebase/OAuth tomorrow — behind a single interface.
+- 💸 **Deployed on $0.** Scale-to-zero hosting, a free-tier LLM key that can only rate-limit
+  (never bill), plus app-level daily/per-IP caps. Defence-in-depth cost control.
+
+---
+
+## 🎬 Demo
+
+<!-- Replace with a real GIF: login → users table → agent answering a multi-tool question -->
+![OpsPilot demo](docs/demo.gif)
+
+> **Ask it:** _“Which services are degraded and what’s the runbook for them?”_
+> → the agent queries live service data **and** retrieves the runbook, then answers with citations.
+
+---
+
+## 🏗️ Architecture
+
+```
+                       ┌──────────────────────────┐
+   Recruiter ─────────▶│   Next.js (Vercel)       │   Pure frontend:
+   browser             │   App Router · TS        │   TanStack Query · Zustand
+                       │   shadcn/ui · Tailwind   │   Axios · TanStack Table
+                       └───────────┬──────────────┘
+                                   │ HTTPS / SSE (streaming)
+                                   ▼
+                       ┌──────────────────────────┐
+                       │   FastAPI (scale-to-zero) │   thin routers → services
+                       │   Pydantic · async        │   → repositories
+                       │   Auth · Users · Services  │
+                       │   Incidents · RAG · Agent  │
+                       └───────────┬──────────────┘
+             ┌─────────────────────┼───────────────────────────┐
+             ▼                     ▼                           ▼
+   ┌───────────────────┐  ┌──────────────────┐    ┌──────────────────────┐
+   │ Postgres+pgvector │  │  Gemini (free)   │    │  Upstash · Langfuse  │
+   │  app data +       │  │  LLM + embeddings│    │  rate limits · traces│
+   │  document_chunks  │  └──────────────────┘    └──────────────────────┘
+   │  (Neon)           │
+   └───────────────────┘
+```
+
+**The RAG + agent flow**
+
+```
+question ─▶ agent (Gemini, reasons) ─▶ needs a tool?
+                    ▲                        │ yes
+                    │                        ▼
+                    │             retrieve_docs / query_services /
+                    └── observe ── query_incidents / query_users
+                                             │ no
+                                             ▼
+                          grounded, cited answer  ── streamed via SSE
 ```
 
 ---
 
-## Step 1 — Create the repo locally
+## 🧰 Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | Next.js 15 (App Router), React, TypeScript, TanStack Query, TanStack Table, Zustand, Axios, shadcn/ui, Tailwind CSS |
+| **Backend** | FastAPI, Pydantic v2, SQLAlchemy 2.0 (async), Alembic |
+| **AI** | LangGraph (agent), Google Gemini (LLM + `text-embedding-004`), Postgres **pgvector** (RAG) |
+| **Data** | PostgreSQL (Neon) |
+| **Infra** | Vercel · Render/Cloud Run · Upstash Redis · Langfuse · GitHub Actions CI |
+| **Auth** | JWT (provider-pluggable) + demo-guest |
+
+---
+
+## 🔬 Evaluation results
+
+The agent is measured against a golden dataset (KB, live-data, multi-tool, and
+out-of-scope cases). Deterministic checks run offline in CI and gate the build.
+
+<!-- Replace with your real numbers from evals/reports/latest.md -->
+| Metric | Score |
+|---|---|
+| Overall pass rate | **100.0% (28/28)** |
+| Retrieval hit-rate (sources) | **100.0%** |
+| Tool-selection accuracy | **100.0%** |
+| Hallucination / decline accuracy | **100.0%** |
+| Avg latency / request | **16.7ms** |
+
+> _Full methodology and the latest run:_ [`apps/api/evals/reports/latest.md`](apps/api/evals/reports/latest.md)
+
+<!-- Optional but powerful: a Langfuse trace screenshot -->
+<!-- ![Langfuse trace](docs/trace.png) -->
+
+---
+
+## 🚀 Key engineering decisions
+
+Selected from [`DECISIONS.md`](DECISIONS.md) — the trade-offs behind the build.
+
+- **Grounding over fluency.** If retrieval is weak, the agent declines (“I don’t have that in
+  the knowledge base”) instead of fabricating — enforced *before* the model is even called, and
+  guarded by out-of-scope eval cases in CI.
+- **Server-side pagination/sort/filter.** All done in SQL, not in React — the table stays fast
+  past thousands of rows and doesn’t ship the whole dataset to the client.
+- **No optimistic updates where placement is unknowable.** With server-side sorting/filtering,
+  a new row’s page position isn’t known, so mutations are pessimistic + refetch — correctness
+  over a 600 ms illusion.
+- **Provider-pluggable auth.** JWT lives behind an `AuthProvider` interface; swapping to Firebase
+  is a new adapter, not a rewrite. (Same pattern for the LLM/embeddings.)
+- **Defence-in-depth $0 cost control.** Free Gemini key (rate-limits, never bills) + a global
+  daily budget + per-IP limits + scale-to-zero hosting.
+- **Race-safe streaming.** SSE with an `AbortController` stop, capped conversation memory, and a
+  DB-persisted message as the source of truth after streaming.
+
+---
+
+## 🖥️ Running locally
+
+**Prerequisites:** Node 20+, Python 3.12+, a Postgres with `pgvector` (or a free Neon project),
+a free [Gemini API key](https://aistudio.google.com/apikey).
 
 ```bash
-mkdir opspilot && cd opspilot
-git init
-git branch -M main
-mkdir -p apps
+git clone https://github.com/Gagan-kshirsagar/opspilot.git
+cd opspilot
+```
+
+### Backend (`apps/api`)
+```bash
+cd apps/api
+uv venv && source .venv/bin/activate
+uv sync --extra dev
+cp .env.example .env            # fill in OPSPILOT_DATABASE_URL, OPSPILOT_GOOGLE_API_KEY, OPSPILOT_SECRET_KEY
+uv run alembic upgrade head     # create tables
+uv run python -m app.seed       # seed teams/users/services/incidents
+uv run python -m app.rag.ingest # embed the knowledge base into pgvector
+uv run uvicorn app.main:app --reload   # http://localhost:8000/docs
+```
+
+### Frontend (`apps/web`)
+```bash
+cd apps/web
+npm install
+cp .env.example .env.local      # set NEXT_PUBLIC_API_URL=http://localhost:8000
+npm run dev                     # http://localhost:3000
 ```
 
 ---
 
-## Step 2 — Drop in the standards + CI files
+## 🧪 Tests, lint & evals
 
-Copy these from the `opspilot-repo-setup` bundle into the repo **root**:
+```bash
+# Backend
+cd apps/api
+uv run pytest -q
+uv run ruff check .
+uv run python -m app.evals.run --offline   # run the eval harness
+
+# Frontend
+cd apps/web
+npm run lint && npm run typecheck && npm run test -- --run
+```
+
+CI (GitHub Actions) runs lint · typecheck · tests · build · offline evals on every push.
+
+---
+
+## 📁 Project structure
 
 ```
 opspilot/
-├─ AGENTS.md
-├─ DECISIONS.md
-├─ README.md
-├─ .gitignore
-└─ .github/
-   ├─ pull_request_template.md
-   └─ workflows/
-      ├─ web-ci.yml
-      └─ api-ci.yml
-```
-
-> Do this now, before any code. These files are what keep everything after
-> them consistent.
-
-Commit the foundation:
-
-```bash
-git add .
-git commit -m "chore: repo standards, CI, and gitignore"
+├─ apps/
+│  ├─ web/                 # Next.js frontend (pure client of the API)
+│  │  └─ src/{app,components,hooks,lib,stores}
+│  └─ api/                 # FastAPI backend
+│     └─ app/{api,services,repositories,models,schemas,rag,agent,evals,core}
+├─ .github/workflows/      # web-ci.yml · api-ci.yml
+├─ AGENTS.md               # engineering standards
+├─ DECISIONS.md            # decision log
+└─ README.md
 ```
 
 ---
 
-## Step 3 — Scaffold the frontend (apps/web)
+## 📝 License
 
-```bash
-cd apps
-npx create-next-app@latest web \
-  --typescript --tailwind --eslint --app --src-dir \
-  --import-alias "@/*" --use-npm
-cd web
-```
+MIT — see [`LICENSE`](LICENSE).
 
-### 3a — Install the stack (per AGENTS.md)
-
-```bash
-# server state, http, client state, forms, tables
-npm install @tanstack/react-query axios zustand \
-  react-hook-form zod @hookform/resolvers @tanstack/react-table
-
-# testing + a11y lint (dev)
-npm install -D vitest @testing-library/react @testing-library/jest-dom \
-  @testing-library/user-event jsdom eslint-plugin-jsx-a11y
-```
-
-### 3b — Initialise shadcn/ui
-
-```bash
-npx shadcn@latest init      # choose defaults; it wires Tailwind + components dir
-npx shadcn@latest add button card input badge dialog table dropdown-menu sonner
-```
-
-### 3c — Add the scripts CI expects
-
-Edit `apps/web/package.json` → `"scripts"`:
-
-```json
-{
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest"
-  }
-}
-```
-
-### 3d — Minimal Vitest config
-
-Create `apps/web/vitest.config.ts`:
-
-```ts
-import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
-import path from "path";
-
-export default defineConfig({
-  plugins: [react()],
-  test: {
-    environment: "jsdom",
-    globals: true,
-    setupFiles: "./vitest.setup.ts",
-  },
-  resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
-});
-```
-
-Create `apps/web/vitest.setup.ts`:
-
-```ts
-import "@testing-library/jest-dom";
-```
-
-```bash
-npm install -D @vitejs/plugin-react
-```
-
-### 3e — One smoke test so CI has something green
-
-Create `apps/web/src/app/__tests__/smoke.test.tsx`:
-
-```tsx
-import { describe, it, expect } from "vitest";
-
-describe("smoke", () => {
-  it("runs", () => {
-    expect(1 + 1).toBe(2);
-  });
-});
-```
-
-### 3f — Verify locally
-
-```bash
-npm run lint && npm run typecheck && npm run test -- --run && npm run build
-```
-
-All four must pass before you move on.
-
-```bash
-cd ../..            # back to repo root
-git add . && git commit -m "feat: scaffold Next.js frontend with core stack"
-```
-
----
-
-## Step 4 — Scaffold the backend (apps/api)
-
-Use the **opspilot-backend** bundle you already have (it boots and passes tests):
-
-```bash
-# from repo root
-cp -r /path/to/opspilot-backend apps/api
-cd apps/api
-uv venv && source .venv/bin/activate
-uv pip install -e ".[dev]"
-```
-
-### 4a — Verify it boots + tests pass
-
-```bash
-uvicorn app.main:app --reload    # visit http://localhost:8000/docs, then Ctrl-C
-pytest -q                         # 4 tests should pass
-ruff check . && ruff format --check .
-```
-
-### 4b — Commit
-
-```bash
-cd ../..
-git add . && git commit -m "feat: scaffold FastAPI backend foundation"
-```
-
-> Note: `api-ci.yml` also runs `alembic upgrade head` and `mypy`. Those come in
-> Day 2 (DB + migrations). Until then, either (a) hold off pushing changes under
-> `apps/api/` so that workflow doesn't run, or (b) temporarily comment the
-> `migrations` + `mypy` steps in `api-ci.yml` and re-enable them on Day 2. The
-> web workflow is fully green now.
-
----
-
-## Step 5 — Create the GitHub repo and push
-
-```bash
-# create an empty repo named "opspilot" on github.com first (no README), then:
-git remote add origin https://github.com/<your-username>/opspilot.git
-git push -u origin main
-```
-
-Open the repo's **Actions** tab — **Web CI** should run and go green.
-Add the badge to the top of `README.md`:
-
-```md
-![Web CI](https://github.com/<you>/opspilot/actions/workflows/web-ci.yml/badge.svg)
-```
-
----
-
-## Step 6 — Turn on the guardrails on GitHub
-
-In the repo **Settings**:
-
-1. **Branches → Add branch protection rule** for `main`:
-   - Require a pull request before merging.
-   - Require status checks to pass → select **Web CI** (and **API CI** once it's
-     green in Step 4/Day 2).
-2. This enforces the "CI green before merge" rule in `AGENTS.md` — a real
-   senior signal, and it stops you (or Antigravity) merging broken code.
-
----
-
-## Step 7 — Pre-commit hooks (optional but senior)
-
-From `apps/web`:
-
-```bash
-npm install -D husky lint-staged
-npx husky init
-echo "cd apps/web && npx lint-staged" > .husky/pre-commit
-```
-
-Add to `apps/web/package.json`:
-
-```json
-"lint-staged": {
-  "*.{ts,tsx}": ["eslint --fix", "prettier --write"]
-}
-```
-
-Now formatting/lint runs automatically on every commit.
-
----
-
-## Step 8 — You're ready for Antigravity
-
-Repo state now:
-
-- ✅ Monorepo: `apps/web` + `apps/api`, both scaffolded and running.
-- ✅ `AGENTS.md` standards in place.
-- ✅ Web CI green; branch protection on.
-- ✅ Clean, conventional commit history.
-
-### The workflow from here (per feature)
-
-```
-1. I write the spec (ask me).
-2. In Antigravity: "Read AGENTS.md. Here's the spec. Plan first, then wait."
-3. Approve the plan → let it generate the slice.
-4. Paste the output here → I run a senior code review.
-5. Fix what review flags → tests pass → CI green.
-6. Explain the slice out loud → log 3 lines in DECISIONS.md.
-7. Open a PR (template auto-fills) → merge on green.
-```
-
-### First feature to build
-
-**Auth + demo-guest login**, end to end (FastAPI JWT → axios client →
-TanStack Query → shadcn login form). It's small, complete, and testable — the
-ideal first vertical slice.
-
----
-
-## Quick reference — the commit sequence
-
-```
-chore: repo standards, CI, and gitignore
-feat: scaffold Next.js frontend with core stack
-feat: scaffold FastAPI backend foundation
-# then per feature:
-feat(auth): demo-guest + JWT login end to end
-...
-```
-
-## RAG & Agent Evaluation Harness
-
-OpsPilot includes an automated evaluation harness that measures retrieval accuracy, tool selection, answer grounding, and hallucination resistance against a 28-case golden dataset.
-
-```bash
-# Run deterministic evaluation gate locally (offline / zero-network)
-python -m app.evals.run --offline --threshold 0.80
-
-# Filter by category
-python -m app.evals.run --offline --category kb
-
-# Live run with Gemini LLM-as-a-judge
-python -m app.evals.run --threshold 0.85
-```
-
-### Benchmark Results (Latest Run)
-*Report generated from [latest.md](file:///Users/gagankshirsagar/Desktop/opspilot/apps/api/evals/reports/latest.md)*
-
-| Metric | Score | Target | Status |
-| :--- | :---: | :---: | :---: |
-| **Overall Pass Rate** | **`100.0%`** (28/28) | `>=80.0%` | ✅ PASS |
-| **Retrieval Hit-Rate (Recall)** | **`100.0%`** | `>=90.0%` | ✅ PASS |
-| **Tool Selection Accuracy** | **`100.0%`** | `>=90.0%` | ✅ PASS |
-| **Decline / Refusal Accuracy** | **`100.0%`** | `100.0%` | ✅ PASS |
-| **Average Offline Latency** | **`16.7ms`** | `<500ms` | ⚡ FAST |
-
----
-
-## If something breaks
-
-- **Web CI red on lint:** run `npm run lint` locally, fix, recommit.
-- **`tsc` errors:** you likely have a stray `any` or missing type — AGENTS.md
-  forbids `any`, so type it properly.
-- **API CI red on mypy/alembic:** expected until Day 2 — see the note in Step 4b.
-- **shadcn init fails:** ensure Tailwind was set up by create-next-app first.
-
-Tell me when Step 5 is green, and I'll hand you the **auth slice spec** to start
-Antigravity.
+<div align="center">
+<sub>Built by <a href="https://github.com/Gagan-kshirsagar">Gagan Kshirsagar</a> ·
+<a href="https://www.linkedin.com/in/gagankshirsagar">LinkedIn</a></sub>
+</div>
